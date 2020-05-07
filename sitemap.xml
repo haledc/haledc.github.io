@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://haledeng.com/about/index.html</loc>
+    
+    <lastmod>2020-05-07T12:56:43.849Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://haledeng.com/blog/20191025-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84Map%E8%AF%AD%E6%B3%95%E7%B3%96/</loc>
     
     <lastmod>2020-05-07T11:41:04.250Z</lastmod>
@@ -523,13 +530,6 @@
     <loc>https://haledeng.com/categories/index.html</loc>
     
     <lastmod>2019-10-13T03:44:44.906Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://haledeng.com/about/index.html</loc>
-    
-    <lastmod>2019-10-13T03:44:44.905Z</lastmod>
     
   </url>
   
