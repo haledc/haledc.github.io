@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="下面看下 Vue 的计算属性的实现，计算属性收集依赖和触发依赖的方式和普通的响应式数据是不一样的。 回到initState函数中，在core&#x2F;instance&#x2F;state.js文件中，看下面的代码 1if (opts.computed) initComputed(vm, opts.computed)  如果设置了computed选项，就调用initComputed初始化选项。 initComput">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之计算属性">
+<meta property="og:url" content="https://haledeng.com/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="下面看下 Vue 的计算属性的实现，计算属性收集依赖和触发依赖的方式和普通的响应式数据是不一样的。 回到initState函数中，在core&#x2F;instance&#x2F;state.js文件中，看下面的代码 1if (opts.computed) initComputed(vm, opts.computed)  如果设置了computed选项，就调用initComputed初始化选项。 initComput">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-26T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:58:21.325Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之计算属性 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之计算属性
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-26 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-26T20:00:00+08:00">2019-09-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>9.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>下面看下 Vue 的计算属性的实现，计算属性收集依赖和触发依赖的方式和普通的响应式数据是不一样的。</p>
+<p>回到<code>initState</code>函数中，在<code>core/instance/state.js</code>文件中，看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (opts.computed) initComputed(vm, opts.computed)</span><br></pre></td></tr></table></figure>
+
+<p>如果设置了<code>computed</code>选项，就调用<code>initComputed</code>初始化选项。</p>
+<h2 id="initComputed"><a href="#initComputed" class="headerlink" title="initComputed"></a><code>initComputed</code></h2><p>看下<code>initComputed</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 初始化计算属性选项</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">initComputed</span>(<span class="params">vm: Component, computed: Object</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// $flow-disable-line</span></span><br><span class="line">  <span class="keyword">const</span> watchers = (vm._computedWatchers = <span class="built_in">Object</span>.create(<span class="literal">null</span>)) <span class="comment">// ! 维护一个常量存储计算属性</span></span><br><span class="line">  <span class="comment">// computed properties are just getters during SSR</span></span><br><span class="line">  <span class="keyword">const</span> isSSR = isServerRendering()</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先声明一个常量<code>watchers</code>存储<code>vm._computedWatchers</code>属性，默认值是空对象，<code>vm._computedWatchers</code>属性存储实例对象的计算属性观察者。</p>
+<a id="more"></a>
+
+<p>声明常量<code>isSSR</code>存储<code>isServerRendering</code>函数的执行结果，即判断当前的环境是不是服务端渲染。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 遍历计算属性</span></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> computed) &#123;</span><br><span class="line">  <span class="keyword">const</span> userDef = computed[key] <span class="comment">// ! 获取每个计算属性的函数或者对象</span></span><br><span class="line">  <span class="keyword">const</span> getter = <span class="keyword">typeof</span> userDef === <span class="string">'function'</span> ? userDef : userDef.get <span class="comment">// ! 获取 getter</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! 计算属性没有 getter 发出警告</span></span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp; getter == <span class="literal">null</span>) &#123;</span><br><span class="line">    warn(<span class="string">`Getter is missing for computed property "<span class="subst">$&#123;key&#125;</span>".`</span>, vm)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>遍历计算属性选项<code>computed</code>，声明常量<code>userDef</code>存储每一个计算属性。</p>
+<p>声明常量<code>getter</code>存储计算属性的<code>getter</code>，首先判断<code>userDef</code>是不是函数类型，如果是的话，直接赋值；如果不是的话，把它的<code>get</code>属性赋值给<code>getter</code>。</p>
+<p>如果获取到的<code>getter</code>不存在，在非生产环境中会报错，警告计算属性缺少<code>getter</code>值。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!isSSR) &#123;</span><br><span class="line">  <span class="comment">// create internal watcher for the computed property.</span></span><br><span class="line">  <span class="comment">// ! 创建计算属性的观察者</span></span><br><span class="line">  watchers[key] = <span class="keyword">new</span> Watcher(</span><br><span class="line">    vm,</span><br><span class="line">    getter || noop,</span><br><span class="line">    noop,</span><br><span class="line">    computedWatcherOptions <span class="comment">// ! 计算属性选项 &#123; lazy: true &#125;</span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果不是服务端渲染，创建计算属性的观察者，并把它存储到<code>watchers</code>中，观察者对应的名称就是<code>key</code>。</p>
+<p>其中传入上面获取的<code>getter</code>作为第二个参数<code>expOrFn</code>传入，如果没有<code>getter</code>就传入一个空函数。</p>
+<p>第四个参数<code>options</code>传入的是常量<code>computedWatcherOptions</code>，它的值是<code>{ lazy: true }</code>。</p>
+<p>继续看剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!(key <span class="keyword">in</span> vm)) &#123;</span><br><span class="line">  defineComputed(vm, key, userDef) <span class="comment">// ! 实现计算属性</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! 如果计算属性名称在 data 和 props 被使用了，发出警告</span></span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (key <span class="keyword">in</span> vm.$data) &#123;</span><br><span class="line">    warn(<span class="string">`The computed property "<span class="subst">$&#123;key&#125;</span>" is already defined in data.`</span>, vm)</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (vm.$options.props &amp;&amp; key <span class="keyword">in</span> vm.$options.props) &#123;</span><br><span class="line">    warn(<span class="string">`The computed property "<span class="subst">$&#123;key&#125;</span>" is already defined as a prop.`</span>, vm)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断计算属性的<code>key</code>是否存在组件实例中，如果不存在，使用<code>defineComputed</code>函数把计算属性代理到实例中，并且把它变成响应式数据。</p>
+<p>另外，判断计算属性的<code>key</code>是否存在于<code>data</code>或者<code>props</code>选项中，如果存在，在非生产环境中会报错，提示计算属性的<code>key</code>值已经被占用了。</p>
+<h2 id="defineComputed"><a href="#defineComputed" class="headerlink" title="defineComputed"></a><code>defineComputed</code></h2><p>下面看下<code>defineComputed</code>函数的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 实现计算属性</span></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">defineComputed</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  target: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  key: string,</span></span></span><br><span class="line"><span class="function"><span class="params">  userDef: Object | Function</span></span></span><br><span class="line"><span class="function"><span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> shouldCache = !isServerRendering() <span class="comment">// ! 是否为服务端渲染，服务端渲染不需要缓存</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>shouldCache</code>，它表示是否是需要缓存，它的值和服务端渲染互斥，因为服务端渲染不需要缓存。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 计算属性是函数时</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> userDef === <span class="string">'function'</span>) &#123;</span><br><span class="line">  sharedPropertyDefinition.get = shouldCache</span><br><span class="line">    ? createComputedGetter(key) <span class="comment">// ! 创建计算属性的 getter</span></span><br><span class="line">    : createGetterInvoker(userDef)</span><br><span class="line">  sharedPropertyDefinition.set = noop <span class="comment">// ! setter 为空函数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当获取的计算属性<code>userDef</code>是函数时，调用<code>createComputedGetter</code>函数创建计算属性的<code>gettter</code>，否则调用<code>createGetterInvoker</code>函数创建计算属性的<code>gettter</code>，这两个方法创建的<code>getter</code>是不一样的，最后把<code>getter</code>赋值给<code>sharedPropertyDefinition</code>的<code>get</code>属性。</p>
+<p>因为用户定义的计算属性是函数时是没有<code>setter</code>的，所以<code>sharedPropertyDefinition</code>对象的<code>set</code>为空函数。</p>
+<p>看下<code>sharedPropertyDefinition</code>对象的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> sharedPropertyDefinition = &#123;</span><br><span class="line">  enumerable: <span class="literal">true</span>,</span><br><span class="line">  configurable: <span class="literal">true</span>,</span><br><span class="line">  <span class="keyword">get</span>: noop,</span><br><span class="line">  <span class="keyword">set</span>: noop</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是一个对象，用来设置<code>Object.defineProperty</code>中的属性描述符，<code>get</code>和<code>set</code>初始值是空函数，需要后面进行重写。</p>
+<p>下面看下<code>createComputedGetter</code>函数和<code>createGetterInvoker</code>函数是怎么创建<code>getter</code>函数的。</p>
+<h3 id="createComputedGetter"><a href="#createComputedGetter" class="headerlink" title="createComputedGetter"></a><code>createComputedGetter</code></h3><p>先看<code>createComputedGetter</code>函数的代码，这里传入的参数是<code>key</code>，它是字符串类型。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 创建计算属性 getter 的函数，需要根据 dirty 更新值和收集依赖</span></span><br><span class="line"><span class="comment">// ! 返回一个新的 computedGetter 函数</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createComputedGetter</span>(<span class="params">key</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">computedGetter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> watcher = <span class="keyword">this</span>._computedWatchers &amp;&amp; <span class="keyword">this</span>._computedWatchers[key] <span class="comment">// ! 获取计算属性观察者</span></span><br><span class="line">    <span class="keyword">if</span> (watcher) &#123;</span><br><span class="line">      <span class="comment">// ! 如果 dirty 为 true 时，表示计算属性观察者可以执行更新</span></span><br><span class="line">      <span class="keyword">if</span> (watcher.dirty) &#123;</span><br><span class="line">        watcher.evaluate() <span class="comment">// ! 调用 evaluate 更新计算属性的值</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因为<code>getter</code>是一个函数，所以这里也返回一个函数。</p>
+<p>先尝试通过<code>key</code>值在<code>vm._computedWatchers</code>中获取到我们定义的计算属性观察者，如果能获取到，判断观察者对象的<code>dirty</code>属性是不是<code>true</code>，如果是的话，说明这个计算属性观察者可以执行更新，然后调用观察者的<code>evaluate</code>方法更新计算属性的值。</p>
+<p>看下<code>evaluate</code>方法的代码，在<code>core/observer/watcher.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">evaluate() &#123;</span><br><span class="line">  <span class="keyword">this</span>.value = <span class="keyword">this</span>.get() <span class="comment">// ! 获取计算属性的新值，并触发它所依赖的响应式对象收集这个计算属性观察者</span></span><br><span class="line">  <span class="keyword">this</span>.dirty = <span class="literal">false</span> <span class="comment">// ! 更新计算属性的值后重新设置为 false，这时再次访问计算属性时，它就不会再求值了</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过调用<code>get</code>方法获取新值，因为<code>get</code>方法中会调用<code>this.getter</code>的方法，也就是我们创建观察者时传入的第二个参数，这样就会重新求值，在求值的过程中会访问到计算属性依赖的那个响应式数据，并触发这个数据收集当前的计算属性观察者作为依赖。</p>
+<p>最后重新将<code>dirty</code>设置为<code>false</code>，这时候，如果再次访问计算属性，就不会再调用<code>evaluate</code>更新计算属性的值。因为计算属性依赖的响应式数据没有更新值，重新求值也还是和以前的值一样，浪费性能。只有在计算属性观察者所依赖的响应性数据更新时，才会触发计算属性观察者的<code>update</code>方法，把<code>dirty</code>重新设置为<code>true</code>。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">update() &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.lazy) &#123;</span><br><span class="line">    <span class="keyword">this</span>.dirty = <span class="literal">true</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续看<code>createComputedGetter</code>函数下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (Dep.target) &#123;</span><br><span class="line">  watcher.depend() <span class="comment">// ! 计算属性收集依赖</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> watcher.value</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>Dep.target</code>是否有值，如果有值，计算属性观察者收集依赖，这里才是计算属性本身收集依赖，是通过它的观察者来收集依赖的。最后返回观察者对象的<code>value</code>值，即上面<code>evaluate</code>获取的值。</p>
+<h3 id="createGetterInvoker"><a href="#createGetterInvoker" class="headerlink" title="createGetterInvoker"></a><code>createGetterInvoker</code></h3><p>下面看下<code>createGetterInvoker</code>函数的代码，它是创建服务器渲染时的<code>getter</code>。</p>
+<p>它的参数是一个函数，如果<code>userDef</code>是函数，直接传入它。如果<code>userDef</code>是对象，传入的是<code>userDef.get</code>属性，也就是<code>getter</code>函数。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 创建计算属性调用钩子函数，自己调用函数，用于服务端渲染中</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createGetterInvoker</span>(<span class="params">fn</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">computedGetter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> fn.call(<span class="keyword">this</span>, <span class="keyword">this</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>服务端渲染中创建的<code>getter</code>，也是返回一个函数。但是这里不用收集依赖和处理<code>dirty</code>属性，而是直接调用传入的<code>getter</code>函数。</p>
+<p>下面看下<code>defineComputed</code>是如何处理计算属性是对象类型的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 计算属性是对象时</span></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  sharedPropertyDefinition.get = userDef.get</span><br><span class="line">    ? shouldCache &amp;&amp; userDef.cache !== <span class="literal">false</span></span><br><span class="line">      ? createComputedGetter(key)</span><br><span class="line">      : createGetterInvoker(userDef.get)</span><br><span class="line">  	: noop</span><br><span class="line">  sharedPropertyDefinition.set = userDef.set || noop <span class="comment">// ! setter 为 set 函数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先判断<code>userDef</code>是否存在<code>get</code>属性，如果不存在，<code>sharedPropertyDefinition.get</code>为空函数。如果存在，再判断<code>shouldCache</code>是否为真且用户没有定义过<code>cache</code>属性为假时，调用<code>createComputedGetter</code>函数创建<code>getter</code>，否则调用<code>createGetterInvoker</code>函数创建<code>getter</code>，这里传入的参数是<code>userDef.get</code>。</p>
+<p>这两个函数在前面已经讲解过了，这里就不在赘述了。</p>
+<p>因为<code>userDef</code>是对象，里面一般是有<code>set</code>属性的，如果有<code>set</code>属性，直接赋值给<code>sharedPropertyDefinition.set</code>的属性，否则赋值为空函数。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (</span><br><span class="line">  process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">  sharedPropertyDefinition.set === noop</span><br><span class="line">) &#123;</span><br><span class="line">  sharedPropertyDefinition.set = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Computed property "<span class="subst">$&#123;key&#125;</span>" was assigned to but it has no setter.`</span>,</span><br><span class="line">      <span class="keyword">this</span></span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">Object</span>.defineProperty(target, key, sharedPropertyDefinition) <span class="comment">// ! 把计算属性代理到实例对象中</span></span><br></pre></td></tr></table></figure>
+
+<p>在非生产环境中，如果<code>sharedPropertyDefinition.set</code>的值经过上面的逻辑之后还是一个空函数，也就是说用户没有设置<code>setter</code>。这时会把<code>sharedPropertyDefinition.set</code>赋值成一个警告函数，当你修改计算属性的值时，会提醒你这个计算属性没有设置<code>setter</code>，不能修改它的值。</p>
+<p>最后使用<code>Object.defineProperty</code>定义<code>target</code>的<code>key</code>，而它的属性描述符就是上面代码中的定义的<code>sharedPropertyDefinition</code>对象，这里的<code>target</code>就是 Vue 的实例对象，把计算属性代理到实例对象中。</p>
+<p>使用计算属性示例代码，这里使用官方文档的例子。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 计算属性是函数，这个函数必须有返回值，是一个 getter</span></span><br><span class="line">computed: &#123;</span><br><span class="line">  fullName: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.firstName + <span class="string">' '</span> + <span class="keyword">this</span>.lastName</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 计算属性是对象，这个对象里面一般是 getter 和 setter</span></span><br><span class="line">computed: &#123;</span><br><span class="line">  fullName: &#123;</span><br><span class="line">    <span class="comment">// getter</span></span><br><span class="line">    <span class="keyword">get</span>: function () &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.firstName + <span class="string">' '</span> + <span class="keyword">this</span>.lastName</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="comment">// setter</span></span><br><span class="line">    <span class="keyword">set</span>: function (newValue) &#123;</span><br><span class="line">      <span class="keyword">var</span> names = newValue.split(<span class="string">' '</span>)</span><br><span class="line">      <span class="keyword">this</span>.firstName = names[<span class="number">0</span>]</span><br><span class="line">      <span class="keyword">this</span>.lastName = names[names.length - <span class="number">1</span>]</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="计算属性和普通属性的差异"><a href="#计算属性和普通属性的差异" class="headerlink" title="计算属性和普通属性的差异"></a>计算属性和普通属性的差异</h2><p>这里比较一下<strong>计算属性和普通属性的差异</strong></p>
+<h3 id="普通属性收集依赖"><a href="#普通属性收集依赖" class="headerlink" title="普通属性收集依赖"></a>普通属性收集依赖</h3><p>普通属性是在创建观察者实例对象时收集依赖的。在创建观察者的过程中，会执行观察者的构造函数方法，构造函数方法的最后会调用<code>get</code>方法获取观察目标的值，获取值的同时会触发观察目标的<code>getter</code>，<code>getter</code>就会把观察者收集到<code>dep</code>中。</p>
+<h3 id="计算属性收集依赖"><a href="#计算属性收集依赖" class="headerlink" title="计算属性收集依赖"></a>计算属性收集依赖</h3><p>计算属性不是在创建观察者实例的过程中收集依赖。</p>
+<p>在创建计算属性观察者时，会传入一个选项<code>options</code>，它的值是<code>{ lazy: true }</code>。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">watchers[key] = <span class="keyword">new</span> Watcher(</span><br><span class="line">  vm,</span><br><span class="line">  getter || noop,</span><br><span class="line">  noop,</span><br><span class="line">  computedWatcherOptions <span class="comment">// ! 计算属性选项 &#123; lazy: true &#125;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>然后在观察者的构造函数的最后一行代码中，会判断<code>this.lazy</code>的值是否为<code>true</code>，如果为<code>true</code>，不会调用<code>get</code>函数获取值和收集依赖，而是返回一个<code>undefined</code>值。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.lazy = !!options.lazy</span><br><span class="line"><span class="keyword">this</span>.value = <span class="keyword">this</span>.lazy ? <span class="literal">undefined</span> : <span class="keyword">this</span>.get()</span><br></pre></td></tr></table></figure>
+
+<p>那计算属性什么时候收集依赖呢？其实是在访问计算属性的时候收集依赖的。</p>
+<p>看下它在非服务端渲染时是怎么创建<code>getter</code>的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createComputedGetter</span>(<span class="params">key</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">computedGetter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> watcher = <span class="keyword">this</span>._computedWatchers &amp;&amp; <span class="keyword">this</span>._computedWatchers[key] <span class="comment">// ! 获取计算属性观察者</span></span><br><span class="line">    <span class="keyword">if</span> (watcher) &#123;</span><br><span class="line">      <span class="comment">// ! 如果 dirty 为 true 时，表示计算属性的依赖已经更新，现在可以更新计算属性的值</span></span><br><span class="line">      <span class="keyword">if</span> (watcher.dirty) &#123;</span><br><span class="line">        watcher.evaluate() <span class="comment">// ! 调用 evaluate 更新计算属性的值</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (Dep.target) &#123;</span><br><span class="line">        watcher.depend() <span class="comment">// ! 计算属性收集依赖</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> watcher.value <span class="comment">// ! 返回计算属性的值</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先获取到计算属性的观察者，然后判断观察者的<code>dirty</code>属性的值是否为真，如果为真，说明计算属性的所依赖的响应式数据已经更新，然后调用观察者的<code>evaluate</code>方法更新观察者的值，也就是更新计算属性的值。然后判断<code>Dep.target</code>是否有值，如果有值的话，调用观察者的<code>depend</code>收集依赖。</p>
+<h3 id="计算属性的值的更新"><a href="#计算属性的值的更新" class="headerlink" title="计算属性的值的更新"></a>计算属性的值的更新</h3><p>我们看下<code>evaluate</code>是如何更新计算属性的值的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">evaluate() &#123;</span><br><span class="line">  <span class="keyword">this</span>.value = <span class="keyword">this</span>.get() <span class="comment">// ! 获取计算属性的新值，并触发它所依赖的响应式对象收集这个计算属性观察者</span></span><br><span class="line">  <span class="keyword">this</span>.dirty = <span class="literal">false</span> <span class="comment">// ! 更新计算属性的值后重新设置为 false，这时再次访问计算属性时，它就不会再求值了</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>还是调用观察者的<code>get</code>方法来更新值，更新后重新把<code>this.dirty</code>设置为<code>false</code>。之后，再访问计算属性后，就不会执行<code>evaluate</code>求值了，因为它的值还是一样的。</p>
+<p>只有在它所依赖的响应式对象发现变化时，触发计算属性观察者的<code>update</code>函数，把<code>dirty</code>设置为<code>true</code>。这时候再访问计算属性，它就会调用<code>evaluate</code>方法重新求值。</p>
+<p><strong>小结</strong>：计算属性不但是收集依赖是在访问属性的时候，更新值也是在访问属性的时候。</p>
+<h2 id="计算属性的更新流程"><a href="#计算属性的更新流程" class="headerlink" title="计算属性的更新流程"></a>计算属性的更新流程</h2><p>在初始化<code>computed</code>选项的时候，创建计算属性的观察者，并传入选项<code>options</code>，它的值为<code>{ lazy: true }</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">watchers[key] = <span class="keyword">new</span> Watcher(</span><br><span class="line">  vm,</span><br><span class="line">  getter || noop,</span><br><span class="line">  noop,</span><br><span class="line">  computedWatcherOptions <span class="comment">// ! 计算属性选项 &#123; lazy: true &#125;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>在创建过程中会执行观察者的构造函数的代码，在代码最后一行是下面这样的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.value = <span class="keyword">this</span>.lazy ? <span class="literal">undefined</span> : <span class="keyword">this</span>.get()</span><br></pre></td></tr></table></figure>
+
+<p>所以计算属性创建之后没有求值，它的值是<code>undefiend</code>。</p>
+<p>只有在我们访问计算属性的时候，触发它的<code>getter</code>，它才会求值</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">computedGetter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> watcher = <span class="keyword">this</span>._computedWatchers &amp;&amp; <span class="keyword">this</span>._computedWatchers[key] <span class="comment">// ! 获取观察者</span></span><br><span class="line">  <span class="keyword">if</span> (watcher) &#123;</span><br><span class="line">    <span class="comment">// ! 如果 dirty 为 true 时，表示计算属性观察者可以更新</span></span><br><span class="line">    <span class="keyword">if</span> (watcher.dirty) &#123;</span><br><span class="line">      watcher.evaluate() <span class="comment">// ! 调用 evaluate 更新计算属性的值</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (Dep.target) &#123;</span><br><span class="line">      watcher.depend() <span class="comment">// ! 计算属性收集依赖</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> watcher.value <span class="comment">// ! 返回计算属性的值</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个求值也有条件的，这也是计算属性性能好的地方。</p>
+<p>什么条件？就是计算属性观察者的<code>ditry</code>属性必须为<code>true</code>。</p>
+<p>在我们创建计算属性观察者的时候，<code>dirty</code>属性的值和传进来的<code>lazy</code>值相同的，它的值为<code>true</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.lazy = !!options.lazy</span><br><span class="line"><span class="keyword">this</span>.dirty = <span class="keyword">this</span>.lazy <span class="comment">// for lazy watchers</span></span><br></pre></td></tr></table></figure>
+
+<p>所以初始化<code>computed</code>选项后，里面的计算属性都有一次求值机会，看下<code>evaluate</code>函数代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">evaluate() &#123;</span><br><span class="line">  <span class="keyword">this</span>.value = <span class="keyword">this</span>.get() <span class="comment">// ! 获取计算属性的新值，并触发它所依赖的响应式对象收集这个计算属性观察者</span></span><br><span class="line">  <span class="keyword">this</span>.dirty = <span class="literal">false</span> <span class="comment">// ! 更新计算属性的值后重新设置为 false，这时再次访问计算属性时，它就不会再求值了</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过调用<code>get</code>方法更新计算属性的值，同时会触发它所依赖的响应式对象收集这个计算属性观察者。更新计算属性的值之后，会重新把<code>dirty</code>属性设置为<code>false</code>。之后，我们再次访问计算属性时，因为<code>dirty</code>的值为<code>false</code>就不会通过观察者函数的<code>evaluate</code>方法重写求值。</p>
+<p>因为计算属性的更新值是在访问它的时候，不可能每次访问都去求值，这会非常影响性能。所以每次访问的时候，如果它所依赖的响应性数据没有更新，计算属性就一直是那个值。</p>
+<p>那什么时候计算属性的值会更新呢？只在它所依赖的响应性对象发现变化后才会更新。这又是什么原理呢？</p>
+<p>因为计算属性观察者已经是计算属性所依赖的响应式数据的依赖，当这个数据发生更新时，会触发<code>setter</code>，执行所有的依赖更新，这包括了这个计算属性观察者的更新，观察者更新是会调用<code>update</code>方法的，而<code>update</code>方法前面的代码会把<code>dirty</code>属性重新设置为<code>true</code>。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">update() &#123;</span><br><span class="line">  <span class="comment">/* istanbul ignore else */</span></span><br><span class="line">  <span class="comment">// ! 如果启动懒惰模式  =&gt; 更新 dirty 为 true，说明可以更新计算属性的值</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.lazy) &#123;</span><br><span class="line">    <span class="keyword">this</span>.dirty = <span class="literal">true</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因为计算属性观察者的<code>lazy</code>属性是<code>true</code>，所以这里设置<code>dirty</code>为<code>true</code>。</p>
+<p>然后，你再访问计算属性时，触发它的<code>getter</code>，此时<code>dirty</code>的值为<code>true</code>，就会调用<code>evaluate</code>函数更新计算属性的值。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createComputedGetter</span>(<span class="params">key</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">computedGetter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  	<span class="keyword">const</span> watcher = <span class="keyword">this</span>._computedWatchers &amp;&amp; <span class="keyword">this</span>._computedWatchers[key]</span><br><span class="line">    <span class="keyword">if</span> (watcher) &#123;</span><br><span class="line">      <span class="comment">// ! 如果 dirty 为 true 时，表示计算属性观察者可以更新</span></span><br><span class="line">      <span class="keyword">if</span> (watcher.dirty) &#123;</span><br><span class="line">        watcher.evaluate() <span class="comment">// ! 调用 evaluate 更新计算属性的值</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="comment">// ...</span></span><br><span class="line">      <span class="keyword">return</span> watcher.value <span class="comment">// ! 返回计算属性的值</span></span><br><span class="line">    &#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">evaluate() &#123;</span><br><span class="line">  <span class="keyword">this</span>.value = <span class="keyword">this</span>.get()</span><br><span class="line">  <span class="keyword">this</span>.dirty = <span class="literal">false</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/" title="Vue2源码学习笔记之计算属性">https://haledeng.com/blog/20190926-Vue2源码学习笔记之计算属性/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/" rel="prev" title="Vue2源码学习笔记之侦听器">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之侦听器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/" rel="next" title="Vue2源码学习笔记之Props">
+      Vue2源码学习笔记之Props <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#initComputed"><span class="nav-number">1.</span> <span class="nav-text">initComputed</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#defineComputed"><span class="nav-number">2.</span> <span class="nav-text">defineComputed</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#createComputedGetter"><span class="nav-number">2.1.</span> <span class="nav-text">createComputedGetter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#createGetterInvoker"><span class="nav-number">2.2.</span> <span class="nav-text">createGetterInvoker</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算属性和普通属性的差异"><span class="nav-number">3.</span> <span class="nav-text">计算属性和普通属性的差异</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#普通属性收集依赖"><span class="nav-number">3.1.</span> <span class="nav-text">普通属性收集依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算属性收集依赖"><span class="nav-number">3.2.</span> <span class="nav-text">计算属性收集依赖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算属性的值的更新"><span class="nav-number">3.3.</span> <span class="nav-text">计算属性的值的更新</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算属性的更新流程"><span class="nav-number">4.</span> <span class="nav-text">计算属性的更新流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

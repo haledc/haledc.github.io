@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前面章节通过初始化data选项的initData函数讲解了 Vue 的响应式系统。 下面继续讲解props选项的初始化。 props的初始化回到initState函数，查看初始化props选项的代码，在core&#x2F;instance&#x2F;state.js文件中 1if (opts.props) initProps(vm, opts.props)  通过调用initProps函数初始化props选项，还需要">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之Props">
+<meta property="og:url" content="https://haledeng.com/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="前面章节通过初始化data选项的initData函数讲解了 Vue 的响应式系统。 下面继续讲解props选项的初始化。 props的初始化回到initState函数，查看初始化props选项的代码，在core&#x2F;instance&#x2F;state.js文件中 1if (opts.props) initProps(vm, opts.props)  通过调用initProps函数初始化props选项，还需要">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-28T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:58:26.102Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之Props | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之Props
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-28 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-28T20:00:00+08:00">2019-09-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>15k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>14 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>前面章节通过初始化<code>data</code>选项的<code>initData</code>函数讲解了 Vue 的响应式系统。</p>
+<p>下面继续讲解<code>props</code>选项的初始化。</p>
+<h2 id="props的初始化"><a href="#props的初始化" class="headerlink" title="props的初始化"></a><code>props</code>的初始化</h2><p>回到<code>initState</code>函数，查看初始化<code>props</code>选项的代码，在<code>core/instance/state.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (opts.props) initProps(vm, opts.props)</span><br></pre></td></tr></table></figure>
+
+<p>通过调用<code>initProps</code>函数初始化<code>props</code>选项，还需要传入实例对象<code>vm</code>和合并选项后的<code>props</code>属性。</p>
+<p>下面看下<code>initProps</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">initProps</span>(<span class="params">vm: Component, propsOptions: Object</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> propsData = vm.$options.propsData || &#123;&#125; <span class="comment">// ! 获取 props 数据来源</span></span><br><span class="line">  <span class="keyword">const</span> props = (vm._props = &#123;&#125;)</span><br><span class="line">  <span class="comment">// cache prop keys so that future props updates can iterate using Array</span></span><br><span class="line">  <span class="comment">// instead of dynamic object key enumeration.</span></span><br><span class="line">  <span class="keyword">const</span> keys = (vm.$options._propKeys = [])</span><br><span class="line">  <span class="keyword">const</span> isRoot = !vm.$parent</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>propsData</code>存储<code>vm.$options.propsData</code>属性，这是外界传进来的<code>props</code>数据。</p>
+<a id="more"></a>
+
+<p>声明常量<code>props</code>存储实例对象的<code>vm._props</code>属性，初始值为空对象，这个属性用来存储初始化后<code>props</code>的值。</p>
+<p>声明常量<code>keys</code>存储<code>vm.$options._propsKeys</code>属性，初始值为空数组，这是<code>props</code>的<code>key</code>组成的数组。</p>
+<p>声明常量<code>isRoot</code>存储表达式<code>!vm.$parent</code>的值，如果值为<code>true</code>，表示该组件是根组件，因为根组件没有<code>$parent</code>属性。</p>
+<p>继续看下面的代码，只列出前面和后面的代码，中间的代码暂时省略。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 不是根组件时，不进行监听，因为可能传过来的引用类型的值已经是响应式数据</span></span><br><span class="line"><span class="keyword">if</span> (!isRoot) &#123;</span><br><span class="line">  toggleObserving(<span class="literal">false</span>) <span class="comment">// ! 关闭监听开关 shouldObserve = false</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">toggleObserving(<span class="literal">true</span>) <span class="comment">// ! 开启监听开关 shouldObserve = true</span></span><br></pre></td></tr></table></figure>
+
+<p><code>toggleObserving</code>函数前面已经讲解过了，是控制变量<code>shouldObserve</code>的值的函数，而变量<code>shouldObserve</code>又是创建监听器对象的关键参数，是<code>observe</code>函数中创建监听器对象的五个必要条件之一。</p>
+<p>这里先设置<code>shouldObserve</code>为<code>false</code>，最后把它的值重置为<code>true</code>。</p>
+<p>下面看下中间的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> propsOptions) &#123;</span><br><span class="line">  keys.push(key)</span><br><span class="line">  <span class="keyword">const</span> value = validateProp(key, propsOptions, propsData, vm) <span class="comment">// ! 校验 props</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>中间代码是一个<code>for</code>循环语句，遍历的是通过参数传进来的合并选项后的<code>props</code>选项。在遍历的过程中把<code>key</code>值都放入上面定义的<code>keys</code>数组中。</p>
+<p>声明变量<code>value</code>存储<code>validateProp</code>函数的返回值，<code>validateProp</code>函数是检验<code>props</code>传入值的函数，返回值是验证后的<code>prop</code>的值，后面再详细讲解。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> hyphenatedKey = hyphenate(key)</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! prop 的名字是保留的属性，发出警告</span></span><br><span class="line">  <span class="keyword">if</span> (</span><br><span class="line">    isReservedAttribute(hyphenatedKey) ||</span><br><span class="line">    config.isReservedAttr(hyphenatedKey)</span><br><span class="line">  ) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`"<span class="subst">$&#123;hyphenatedKey&#125;</span>" is a reserved attribute and cannot be used as component prop.`</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在非生产环境中，声明常量<code>hyphenatedKey</code>存储通过<code>hyphenate</code>函数把<code>key</code>值转换成连字符和小写字母的形式的值，然后再判断这个值是否是内置的属性名，如果是的话会发出警告。</p>
+<p>看下<code>hyphenate</code>函数的代码，这个函数把驼峰形式的变量转换成连字符形式。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> hyphenateRE = <span class="regexp">/\B([A-Z])/g</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> hyphenate = cached((str: string): <span class="function"><span class="params">string</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> str.replace(hyphenateRE, <span class="string">'-$1'</span>).toLowerCase()</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> key = <span class="string">'propName'</span></span><br><span class="line">hyphenate(key) <span class="comment">// 'prop-name'</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 定义 props 的属性，不是响应式</span></span><br><span class="line">defineReactive(props, key, value, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">if</span> (!isRoot &amp;&amp; !isUpdatingChildComponent) &#123;</span><br><span class="line">    <span class="comment">// ! 组件直接修改 props 属性，发出警告</span></span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Avoid mutating a prop directly since the value will be `</span> +</span><br><span class="line">        <span class="string">`overwritten whenever the parent component re-renders. `</span> +</span><br><span class="line">        <span class="string">`Instead, use a data or computed property based on the prop's `</span> +</span><br><span class="line">        <span class="string">`value. Prop being mutated: "<span class="subst">$&#123;key&#125;</span>"`</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>还是在非生产环境中，使用<code>defineReactive</code>函数把<code>props</code>对象下面的<code>key</code>值定义成<code>value</code>值，<code>props</code>也就是实例对象的<code>_props</code>属性，它们都是来自同一个引用。</p>
+<p>另外，还传入第四个参数<code>customSetter</code>函数，这个函数的作用是，在不是根组件或者不是更新子组件的时候，如果修改了<code>props</code>的属性会发出警告。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// ! 定义 props 的属性</span></span><br><span class="line">  <span class="comment">// ! 因为 shouldObserve = false, 不会变成响应式</span></span><br><span class="line">  defineReactive(props, key, value)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在回到生产环境，还是使用<code>defineReactive</code>函数把<code>props</code>对象下面的<code>key</code>值定义成<code>value</code>值。</p>
+<p>因为在<code>for</code>循环之前因为把<code>shouldObserve</code>的值设置为<code>false</code>，所以<code>defineReactive</code>函数是不会把<code>props</code>的数据变成响应性数据的。为什么要这样做呢？因为传过来的<code>props</code>值一般都是响应式数据，这里就不需要定义了。</p>
+<p>再看下<code>for</code>循环中的剩下的最后代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!(key <span class="keyword">in</span> vm)) &#123;</span><br><span class="line">  proxy(vm, <span class="string">`_props`</span>, key) <span class="comment">// ! 代理 props 上的属性 vm.xxx = vm._props.xxx</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用<code>proxy</code>函数把<code>props</code>的数据代理到实例对象中，这和<code>initData</code>函数中的逻辑一样。</p>
+<p>到这里，<code>props</code>选项的初始化就已经完成。下面看下<code>props</code>的属性是怎么验证的。</p>
+<h2 id="Props-的校验"><a href="#Props-的校验" class="headerlink" title="Props 的校验"></a><code>Props</code> 的校验</h2><p>在初始化<code>props</code>选项时，使用<code>for</code>循环语句遍历<code>props</code>选项，在每次循环时都会调用<code>validateProp</code>函数验证外界传过来的值是否符合要求。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> propsOptions) &#123;</span><br><span class="line">  keys.push(key)</span><br><span class="line">  <span class="keyword">const</span> value = validateProp(key, propsOptions, propsData, vm) <span class="comment">// ! 校验 props</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面看下<code>validateProp</code>函数的代码，在<code>core/util/props.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">validateProp</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  key: string,</span></span></span><br><span class="line"><span class="function"><span class="params">  propOptions: Object, <span class="regexp">//</span> ! 合并后的 props 选项</span></span></span><br><span class="line"><span class="function"><span class="params">  propsData: Object, <span class="regexp">//</span> ! 数据来源对象</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">any</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先看下函数的四个参数</p>
+<ol>
+<li><code>key</code>：遍历合并选项后的<code>props</code>选项的<code>key</code>。</li>
+<li><code>propOptions</code>：合并选项后的<code>props</code>选项。</li>
+<li><code>propsData</code>：外界传进来的<code>props</code>数据。</li>
+<li><code>vm</code>：实例对象，这个参数是可选的。</li>
+</ol>
+<p>然后看下函数的代码，先看前面部分的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> prop = propOptions[key] <span class="comment">// ! 获取定义的 prop 的属性包括 type 默认值等</span></span><br><span class="line"><span class="keyword">const</span> absent = !hasOwn(propsData, key) <span class="comment">// ! 外界没有传值进来</span></span><br><span class="line"><span class="keyword">let</span> value = propsData[key] <span class="comment">// ! 获取传进来的值</span></span><br><span class="line"><span class="comment">// boolean casting</span></span><br><span class="line"><span class="keyword">const</span> booleanIndex = getTypeIndex(<span class="built_in">Boolean</span>, prop.type) <span class="comment">// ! 获取 Boolean 类型的索引</span></span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>prop</code>存储用户定义的<code>pros</code>属性，里面包括类型<code>type</code>、默认值<code>default</code>、是否传值<code>required</code>等。声明常量<code>absent</code>存储表达式<code>!hasOwn(propsData, key)</code>的值，当表达式输出的值是<code>ture</code>时，表示外界没有传值进来。声明变量<code>value</code>存储外界传入的值。声明常量<code>booleanIndex</code>存储通过调用<code>getTypeIndex</code>函数获取到的类型的索引。</p>
+<h3 id="getTypeIndex"><a href="#getTypeIndex" class="headerlink" title="getTypeIndex"></a><code>getTypeIndex</code></h3><p>下面看下<code>getTypeIndex</code>函数的代码，这个函数获取类型在数组中的索引。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 获取匹配的类型索引。如果值大于 -1 时，说明匹配到了值</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getTypeIndex</span>(<span class="params">type, expectedTypes</span>): <span class="title">number</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ! 期望的类型不是数组时，直接比较，是相同类型返回 0，不是返回 1</span></span><br><span class="line">  <span class="keyword">if</span> (!<span class="built_in">Array</span>.isArray(expectedTypes)) &#123;</span><br><span class="line">    <span class="keyword">return</span> isSameType(expectedTypes, type) ? <span class="number">0</span> : <span class="number">-1</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! 期望的类型是数组时，需要遍历，然后一一比较，返回匹配的类型在数组中的索引，如果都没有匹配到，返回 -1</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, len = expectedTypes.length; i &lt; len; i++) &#123;</span><br><span class="line">    <span class="keyword">if</span> (isSameType(expectedTypes[i], type)) &#123;</span><br><span class="line">      <span class="keyword">return</span> i</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">-1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数传入的参数是类型<code>type</code>和用户定义（期望）的类型<code>expectedTypes</code>。</p>
+<p>首先判断期望的类型是不是数组，如果不是数组，通过<code>isSameType</code>函数进行比较，确认它们的类型是否相同，如果相同，返回值是<code>0</code>。如果不相同，返回值是<code>-1</code>。如果期望的类型是数组，需要遍历数组，然后把数组中的每个期望类型和传入的类型进行比较，后面详细讲解。</p>
+<p><code>props</code>定义的类型的示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">props: &#123;</span><br><span class="line">  name: &#123;</span><br><span class="line">    type: <span class="built_in">Number</span></span><br><span class="line">  &#125;,</span><br><span class="line">  msg: &#123;</span><br><span class="line">    type: [<span class="built_in">String</span>, <span class="built_in">Number</span>, <span class="built_in">Boolean</span>]</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先看下<code>isSameType</code>函数是怎么比较的，查看它的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 判断类型是否相同</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">isSameType</span>(<span class="params">a, b</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getType(a) === getType(b)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取 type 的字符串类型的值，比如 String =&gt; 'String'</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getType</span>(<span class="params">fn</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> match = fn &amp;&amp; fn.toString().match(<span class="regexp">/^\s*function (\w+)/</span>)</span><br><span class="line">  <span class="keyword">return</span> match ? match[<span class="number">1</span>] : <span class="string">''</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>isSameType</code>函数通过调用<code>getType</code>函数获取<code>type</code>字符串类型的值，然后判断它们是否全等。</p>
+<p>我们看下<code>getType</code>函数的代码，它的作用是获取类型的值，JavaScript 的类型（大写的）的值都是类，也就是构造函数，它是一个函数类型的值。这里匹配出函数字符串化后的名称，如果匹配到的话，返回这个函数名；如果匹配不到返回空字符串。比如<code>String</code>类型会返回<code>String</code>字符串类型的值。</p>
+<p>这里为什么要<code>type</code>是字符串类型的名称呢？因为在一些浏览器中，不同<code>iframes</code>之间的相同类型的构造函数名称是不同的。</p>
+<p>继续回到<code>getTypeIndex</code>函数，看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 期望的类型是数组时，需要遍历，然后一一比较，返回匹配的类型在数组中的索引</span></span><br><span class="line"><span class="comment">// ! 如果都没有匹配到，返回 -1</span></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, len = expectedTypes.length; i &lt; len; i++) &#123;</span><br><span class="line">  <span class="keyword">if</span> (isSameType(expectedTypes[i], type)) &#123;</span><br><span class="line">    <span class="keyword">return</span> i</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> <span class="number">-1</span></span><br></pre></td></tr></table></figure>
+
+<p>如果期望的类型值是一个数组类型，需要遍历数组，获取到数组的每个类型，然后这些类型和传入的类型的值进行比较，如果发现它们全等，就返回期望的类型在数组中的索引。如果遍历之后没有发现值全等的，返回值是<code>-1</code>。</p>
+<p><strong>小结</strong>，<code>getTypeIndex</code>函数就是输入一个类型，然后拿这个类型的值和期望的类型的值（用户定义的）进行比较，看这个类型是不是我们期望的类型（它们的值全等），或者这个类型是不是我们期望的类型之一（包含在期望的类型中）。如果是的话，返回一个大于<code>-1</code>的值。</p>
+<p>了解了<code>getTypeIndex</code>函数的作用后，继续看<code>validateProp</code>函数下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 优先验证 Boolean 类型的值</span></span><br><span class="line"><span class="keyword">if</span> (booleanIndex &gt; <span class="number">-1</span>) &#123;</span><br><span class="line">  <span class="comment">// ! 外界没有传值，且没有默认值，</span></span><br><span class="line">  <span class="keyword">if</span> (absent &amp;&amp; !hasOwn(prop, <span class="string">'default'</span>)) &#123;</span><br><span class="line">    value = <span class="literal">false</span> <span class="comment">// ! 值为 false</span></span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (value === <span class="string">''</span> || value === hyphenate(key)) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里优先验证 <code>Boolean</code>类型的值，即优先处理是布尔值数据的类型，也就是<code>booleanIndex</code>大于<code>-1</code>时。</p>
+<p>首先判断外界有没有传入值且它有没有设置默认值，如果外界没有传入值，然后它又没有设置默认值，那么就把这个<code>prop</code>数据<code>value</code>设为<code>false</code>。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">propsData: &#123;</span><br><span class="line">  <span class="comment">// ... 外界没有传值</span></span><br><span class="line">&#125;</span><br><span class="line">props: &#123;</span><br><span class="line">  propName: &#123;</span><br><span class="line">    type: <span class="built_in">Boolean</span> <span class="comment">// 只设置了 Boolean，没有设置默认值</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// result</span></span><br><span class="line">propName: <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 外界传入空字符串 或者 名字由驼峰转连字符后与值为相同字符串 (someProp="some-prop)</span></span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (value === <span class="string">''</span> || value === hyphenate(key)) &#123;</span><br><span class="line">  <span class="comment">// only cast empty string / same name to boolean if</span></span><br><span class="line">  <span class="comment">// boolean has higher priority</span></span><br><span class="line">  <span class="keyword">const</span> stringIndex = getTypeIndex(<span class="built_in">String</span>, prop.type) <span class="comment">// ! 获取 String 类型的索引</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! 没有定义 String 类型</span></span><br><span class="line">  <span class="comment">// ! 或者 Boolean 类型的索引排在 String 类型的索引前 (类型是数组时 [Boolean String]))</span></span><br><span class="line">  <span class="keyword">if</span> (stringIndex &lt; <span class="number">0</span> || booleanIndex &lt; stringIndex) &#123;</span><br><span class="line">    value = <span class="literal">true</span> <span class="comment">// ! 值为 true</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果外界传入的值是一个空的字符串或者传入的值和<code>key</code>转换成连字符的形式后的值相同时，先看下这个<code>prop</code>是否设置了类型是<code>String</code>，尝试获取<code>stringIndex</code>在期望的数组类型中的索引，如果没有获取到<code>stringIndex</code>（说明没有设置），或者获取到了但是<code>booleanIndex</code>索引在<code>stringIndex</code>索引的前面时，把这个<code>prop</code>的值<code>value</code>设置为<code>true</code>。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">propsData: &#123;</span><br><span class="line">  <span class="comment">// propName: '' // 传值一 传进来的值是空字符串</span></span><br><span class="line">  propName: <span class="string">'prop-name'</span> <span class="comment">// 传值二 传进来的值是 'prop-name'</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">props: &#123;</span><br><span class="line">  propName: &#123;</span><br><span class="line">    <span class="comment">// type: Boolean // 类型一 没有设置 String 类型</span></span><br><span class="line">    type: [<span class="built_in">Boolean</span>, <span class="built_in">String</span>] <span class="comment">// 类型二 没有设置 String 类型，但是 Boolean 排在 String 前面</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// result</span></span><br><span class="line">propName: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// check default value</span></span><br><span class="line"><span class="comment">// ! 处理 prop 未传值的情况</span></span><br><span class="line"><span class="keyword">if</span> (value === <span class="literal">undefined</span>) &#123;</span><br><span class="line">  value = getPropDefaultValue(vm, prop, key) <span class="comment">// ! 获取默认值(非响应式)</span></span><br><span class="line">  <span class="comment">// since the default value is a fresh copy,</span></span><br><span class="line">  <span class="comment">// make sure to observe it.</span></span><br><span class="line">  <span class="keyword">const</span> prevShouldObserve = shouldObserve <span class="comment">// ! 缓存原来的值</span></span><br><span class="line">  toggleObserving(<span class="literal">true</span>) <span class="comment">// ! 不管原来 shouldObserve 是否 true, 这里都先设置为 true</span></span><br><span class="line">  observe(shouldObserve) <span class="comment">// ! 把默认值设为响应式</span></span><br><span class="line">  toggleObserving(prevShouldObserve) <span class="comment">// ! 还原成原先的值</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果<code>value</code>未定义，也就是外界没有传值，调用<code>getPropDefaultValue</code>函数获取设置的默认值并赋值给<code>value</code>。</p>
+<p>先不管<code>getPropDefaultValue</code>函数的逻辑，继续看下面的代码。</p>
+<p>声明常量<code>prevShouldObserve</code>缓存<code>shouldObserve</code>原先的值，然后调用<code>toggleObserving</code>函数把<code>shouldObserve</code>的值设置为<code>true</code>。然后调用<code>observe</code>函数监听<code>value</code>，把它变成响应式数据，最后把<code>shouldObserve</code>还原成原来的值。</p>
+<p>这里的逻辑就是在外界没有传入值，但是有设置默认值时，把<code>prop</code>的值设置为默认值。</p>
+<h3 id="getPropDefaultValue"><a href="#getPropDefaultValue" class="headerlink" title="getPropDefaultValue"></a><code>getPropDefaultValue</code></h3><p>下面看下<code>getPropDefaultValue</code>函数是怎么获取默认值的，查看它的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getPropDefaultValue</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  vm: ?Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  prop: PropOptions,</span></span></span><br><span class="line"><span class="function"><span class="params">  key: string</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">any</span> </span>&#123;</span><br><span class="line">  <span class="comment">// no default, return undefined</span></span><br><span class="line">  <span class="keyword">if</span> (!hasOwn(prop, <span class="string">'default'</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">undefined</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先看下<code>getPropDefaultValue</code>函数的三个参数，分别是实例对象<code>vm</code>，定义的属性<code>prop</code>，以及合并选项后<code>props</code>的<code>key</code>。</p>
+<p>下面看函数体代码，首先判断定义的属性里面有没有设置默认属性<code>default</code>，如果没有，函数返回<code>undefined</code>，也就是说外界没有传入值又没有设置默认值，这时<code>validateProp</code>函数下面的代码是无效的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">observe(value) <span class="comment">// observe(undefined) 是无效的</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看<code>getPropDefaultValue</code>函数下面的代码，在有设置默认值的时候。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> def = prop.default <span class="comment">// ! 获取默认值</span></span><br><span class="line"><span class="comment">// warn against non-factory defaults for Object &amp; Array</span></span><br><span class="line"><span class="comment">// ! 对象和数组类型的默认值必须使用函数返回值，否则会报错</span></span><br><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp; isObject(def)) &#123;</span><br><span class="line">  warn(</span><br><span class="line">    <span class="string">'Invalid default value for prop "'</span> +</span><br><span class="line">      key +</span><br><span class="line">      <span class="string">'": '</span> +</span><br><span class="line">      <span class="string">'Props with type Object/Array must use a factory function '</span> +</span><br><span class="line">      <span class="string">'to return the default value.'</span>,</span><br><span class="line">    vm</span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明变量<code>def</code>存储<code>prop.default</code>的值，即默认值。</p>
+<p>然后在非生产环境下判断<code>def</code>是不是一个非<code>null</code>非<code>undefined</code>的普通对象，如果是的话报错，提示对象和数组类型的<code>prop</code>的默认值必须使用函数的返回值。因为<code>prop</code>的默认值只能是原始类型或者函数类型。</p>
+<p>实例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">props: &#123;</span><br><span class="line">  name: &#123;</span><br><span class="line">    type: <span class="built_in">String</span>,</span><br><span class="line">    <span class="keyword">default</span>: <span class="string">'Hale'</span></span><br><span class="line">  &#125;,</span><br><span class="line">  info: &#123;</span><br><span class="line">    type: <span class="built_in">Object</span>,</span><br><span class="line">    <span class="keyword">default</span>: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (</span><br><span class="line">  vm &amp;&amp;</span><br><span class="line">  vm.$options.propsData &amp;&amp;</span><br><span class="line">  vm.$options.propsData[key] === <span class="literal">undefined</span> &amp;&amp; <span class="comment">// ! 此时，外界还没传值</span></span><br><span class="line">  vm._props[key] !== <span class="literal">undefined</span> <span class="comment">// ! 已经定义非 undefined 的默认值</span></span><br><span class="line">) &#123;</span><br><span class="line">  <span class="keyword">return</span> vm._props[key] <span class="comment">// ! 返回上次的默认值</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果上一次数组更新或者创建时外界没有给该组件传值且组件存在非<code>undefined</code>的默认值时，返回之前的值（默认值），而不用重新再去获取。</p>
+<p>这样可以避免触发无意义的响应，因为默认值如果是一个通过函数创建的对象，那么每次都会重新获取新生成的对象，虽然对象的引用和以前的不一样，但是它们的值是一样的，这样导致页面也没有变化。所以每次都去获取新的引用类型的默认值就没有任何意义，而且还会损耗性能。</p>
+<p>继续看<code>getPropDefaultValue</code>函数剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 默认值是函数类型，但是要求的类型不为 Function（类型是数组或者对象） 时需要求值</span></span><br><span class="line"><span class="keyword">return</span> <span class="keyword">typeof</span> def === <span class="string">'function'</span> &amp;&amp; getType(prop.type) !== <span class="string">'Function'</span></span><br><span class="line">  ? def.call(vm)</span><br><span class="line">  : def</span><br></pre></td></tr></table></figure>
+
+<p>如果默认值是函数类型，但是它期望的类型不是<code>Function</code>类型，说明这是数组或者对象的默认值，需要对默认的函数进行求值获取返回的值。</p>
+<p>如果默认值是函数类型，而它要求的类型也是<code>Funtion</code>类型，说明这个<code>prop</code>的类型就是函数函数，不需要对默认值函数进行求值。</p>
+<p>回到<code>validateProp</code>函数，继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 验证类型，只有在非生产环境进行，且跳过 WEEX 环境的某种判断</span></span><br><span class="line"><span class="keyword">if</span> (</span><br><span class="line">  process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">  <span class="comment">// skip validation for weex recycle-list child component props</span></span><br><span class="line">  !(__WEEX__ &amp;&amp; isObject(value) &amp;&amp; <span class="string">'@binding'</span> <span class="keyword">in</span> value)</span><br><span class="line">) &#123;</span><br><span class="line">  assertProp(prop, key, value, vm, absent)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> value</span><br></pre></td></tr></table></figure>
+
+<p>如果在非生产环境中且在<code>WEEX</code>的某种环境中，使用<code>assertProp</code>函数验证<code>prop</code>的类型。</p>
+<p>这里才是真正开始校验<code>prop</code>的类型。前面的代码都不算验证类型，只是在<code>prop</code>是布尔类型时，设置合理的布尔值以及获取<code>prop</code>的默认值。</p>
+<h3 id="assertProp"><a href="#assertProp" class="headerlink" title="assertProp"></a><code>assertProp</code></h3><p>下面看下<code>assertProp</code>函数的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">assertProp</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  prop: PropOptions,</span></span></span><br><span class="line"><span class="function"><span class="params">  name: string,</span></span></span><br><span class="line"><span class="function"><span class="params">  value: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm: ?Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  absent: boolean</span></span></span><br><span class="line"><span class="function"><span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先看下函数的五个参数。</p>
+<ol>
+<li><code>prop</code>：定义<code>prop</code>的属性。</li>
+<li><code>name</code>：遍历合并选项后的<code>props</code>选项的<code>key</code>，就是<code>prop</code>的名称。</li>
+<li><code>value</code>：外界传入的值，也就是<code>prop</code>的值。</li>
+<li><code>vm</code>：实例对象。</li>
+<li><code>absent</code>：外界是否传入值，为<code>true</code>表示没有传入值。</li>
+</ol>
+<p>下面看下函数体的代码，<strong>注意</strong><code>assertProp</code>函数是验证<code>prop</code>类型的函数，只有在非生产环境中才会执行，验证类型如果不通过会报错。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 有 required 时必须传数据，否则报错</span></span><br><span class="line"><span class="keyword">if</span> (prop.required &amp;&amp; absent) &#123;</span><br><span class="line">  warn(<span class="string">'Missing required prop: "'</span> + name + <span class="string">'"'</span>, vm)</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+
+<p>如果定义的属性中设置了<code>required</code>为<code>true</code>，但是外界没有传入值，会报错，提示没有要求的<code>prop</code>值。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 非必需传数据且值为 null 或者 undefined 时，直接返回</span></span><br><span class="line"><span class="keyword">if</span> (value == <span class="literal">null</span> &amp;&amp; !prop.required) &#123;</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果定义的属性中没有设置<code>require</code>的值（这时<code>required</code>的值是<code>undefined</code>），而且外界传入的值是<code>null</code>或者<code>undefined</code>时，直接返回，不需要验证。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 判断类型是否与期望相符</span></span><br><span class="line"><span class="keyword">let</span> type = prop.type <span class="comment">// ! 获取类型</span></span><br><span class="line"><span class="keyword">let</span> valid = !type || type === <span class="literal">true</span> <span class="comment">// ! 没有设置类型或者类型的值为 true 时，不需要校验，直接判定为 true</span></span><br><span class="line"><span class="keyword">const</span> expectedTypes = [] <span class="comment">// ! 期望类型的集合</span></span><br><span class="line"><span class="keyword">if</span> (type) &#123;</span><br><span class="line">  <span class="comment">// ! 数组类型</span></span><br><span class="line">  <span class="keyword">if</span> (!<span class="built_in">Array</span>.isArray(type)) &#123;</span><br><span class="line">    type = [type]</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ! 遍历数组的所有类型，并验证每一种类型, 当出现一种类型验证失败后 即 !valid 时，循环结束</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; type.length &amp;&amp; !valid; i++) &#123;</span><br><span class="line">    <span class="keyword">const</span> assertedType = assertType(value, type[i]) <span class="comment">// ! 类型验证的返回值</span></span><br><span class="line">    expectedTypes.push(assertedType.expectedType || <span class="string">''</span>) <span class="comment">// ! 把返回放入到数组中，后面统一处理</span></span><br><span class="line">    valid = assertedType.valid <span class="comment">// ! 本次循环验证的结果</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里判断外界传入的值的类型是否和用户定义（期望）的类型相同。</p>
+<p>定义变量<code>type</code>存储用户定义的类型。定义变量<code>valid</code>，它是一个布尔值，当用户没有定义类型或者定义的类型的值是<code>true</code>时，遍历<code>valid</code>的值为<code>ture</code>，这同时也是它的初始值。定义常量<code>expectedTypes</code>存储类型验证的结果组成集合，初始值为空数组。</p>
+<p>先判断是否存在定义的类型，如果存在，继续下面的逻辑。判断定义的类型是不是一个数组，如果不是数组，把它包装成一个数组。如果已经是一个数组了，遍历这个数组，验证数组中的每一种类型，如果出现验证任意一种类型失败的情况，循环结束。</p>
+<p>声明常量<code>assertedType</code>存储通过调用<code>assertType</code>函数验证<code>prop</code>类型的返回值。这里先不管<code>assertType</code>函数是怎么验证类型的，继续看下面的逻辑。把验证后的返回值<code>assertedType</code>的<code>expectedType</code>属性放入到<code>expectedTypes</code>数组中，如果<code>expectedTypes</code>属性没有值，返回空字符串。</p>
+<p>最后设置变量<code>valid</code>的值，它的值是每次循环时，验证的返回值<code>assertedType</code>的<code>valid</code>属性，这个属性表示本次循环时验证是否成功，如果验证成功则继续循环，进行下一轮验证；如果验证失败，即<code>valid</code>的值为<code>false</code>时，结束循环。</p>
+<p>到了这里大概可以猜出验证函数的返回值<code>assertedType</code>是什么样子了，它应该是一个对象，至少有两个属性，分别是<code>expectedType</code>和<code>valid</code>。<code>expectedType</code>的值应该就是期望的类型，比如<code>String</code>、<code>Boolean</code>等，它是值是函数类型；而<code>valid</code>的值应该是个布尔值。</p>
+<h3 id="assertType"><a href="#assertType" class="headerlink" title="assertType"></a><code>assertType</code></h3><p>下面就看下<code>assertType</code>函数的代码，这个函数是具体验证类型的方法。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">assertType</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  value: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  type: Function</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): </span>&#123;</span><br><span class="line">  valid: boolean,</span><br><span class="line">  expectedType: string</span><br><span class="line">&#125; &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先看下它的两个参数，分别是<code>prop</code>传入的值<code>value</code>，和我们定义的类型<code>type</code>，<code>type</code>是一个函数。</p>
+<p>下面看下函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> valid</span><br><span class="line"><span class="keyword">const</span> expectedType = getType(type) <span class="comment">// ! 获取期待的类型</span></span><br></pre></td></tr></table></figure>
+
+<p>声明变量<code>valid</code>，它是一个布尔值，也是函数的一个返回值，表示本次验证类型是否通过。</p>
+<p>声明常量<code>expectedType</code>存储字符串类型的<code>type</code>。因为我们传入的参数<code>type</code>的值是一个函数类型的值，需要把它的值转换成函数名，也就是字符串类型，理由在前面已经讲过了。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> type1 = <span class="built_in">String</span> <span class="comment">// String 是函数类型</span></span><br><span class="line">getType(type1) <span class="comment">// 'String' 是字符串类型</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> type2 = <span class="built_in">Boolean</span> <span class="comment">// Boolean 是函数类型</span></span><br><span class="line">getType(type2) <span class="comment">// 'Boolean' 是字符串类型</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 可通过 typeof 来验证的数据类型</span></span><br><span class="line"><span class="keyword">if</span> (simpleCheckRE.test(expectedType)) &#123;</span><br><span class="line">  <span class="keyword">const</span> t = <span class="keyword">typeof</span> value <span class="comment">// ! t 的值是字符串小写</span></span><br><span class="line">  valid = t === expectedType.toLowerCase() <span class="comment">// ! 验证类型</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断正则表达式<code>simpleCheckRE</code>是否和期望的类型<code>expectedType</code>匹配，如果匹配，继续下面的逻辑。</p>
+<p>先看下正则表达式<code>simpleCheckRE</code>的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 可通过 typeof 来验证的数据类型正则</span></span><br><span class="line"><span class="keyword">const</span> simpleCheckRE = <span class="regexp">/^(String|Number|Boolean|Function|Symbol)$/</span></span><br></pre></td></tr></table></figure>
+
+<p>上面这些都是可以通过<code>typeof</code>来判断的类型，比如<code>String</code>、<code>Number</code>、<code>Boolean</code>、<code>Function</code>、<code>Symbol</code>。</p>
+<p>声明变量<code>t</code>存储通过<code>typeof</code>获取的外界传入的数据<code>value</code>的类型。然后比较<code>t</code>和期望的类型<code>expectedType</code>是否相同。因为这里的<code>expectedType</code>是首字母大写的，在比较前需要把它转换成小写的，然后把比较结果赋值给变量<code>valid</code>。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typeof</span> <span class="string">'value'</span> <span class="comment">// 'string'</span></span><br><span class="line">expectedType = <span class="string">'String'</span></span><br><span class="line">expectedType.toLowerCase() <span class="comment">// 'string'</span></span><br><span class="line">valid = <span class="string">'value'</span> ==== type.toLowerCase()</span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// for primitive wrapper objects</span></span><br><span class="line"><span class="comment">// ! 包装类型的验证，验证原型，比如 const str = new String('123')，str 是 String 的实例对象</span></span><br><span class="line"><span class="keyword">if</span> (!valid &amp;&amp; t === <span class="string">'object'</span>) &#123;</span><br><span class="line">  valid = value <span class="keyword">instanceof</span> type</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果上面的比较结果是<code>false</code>，即不相同，再判断<code>t</code>的值是不是<code>object</code>，如果是的话，说明传入的值<code>value</code>是一个包装类型的值，需要判断这个值的原型，调用<code>instanceof</code>判断<code>value</code>的原型是不是<code>type</code>，最后把比较结果赋值给<code>valid</code>变量。</p>
+<p>什么是包装类型？看下面的示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> a = <span class="string">'1'</span> <span class="comment">// 原始类型</span></span><br><span class="line"><span class="keyword">const</span> b = <span class="keyword">new</span> <span class="built_in">String</span>(<span class="string">'1'</span>) <span class="comment">// 包装类型</span></span><br><span class="line"><span class="keyword">typeof</span> a <span class="comment">// 'string'</span></span><br><span class="line"><span class="keyword">typeof</span> b <span class="comment">// 'object'</span></span><br><span class="line">b <span class="keyword">instanceof</span> <span class="built_in">String</span> <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (expectedType === <span class="string">'Object'</span>) &#123;</span><br><span class="line">  valid = isPlainObject(value)</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! 数组验证</span></span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (expectedType === <span class="string">'Array'</span>) &#123;</span><br><span class="line">  valid = <span class="built_in">Array</span>.isArray(value)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当期望的类型是对象<code>Object</code>时，使用<code>isPlainObject</code>方法验证传入的值<code>value</code>的类型，并把验证结果赋值给变量<code>valid</code>。</p>
+<p>当期望的类型是数组<code>Array</code>时，使用<code>Array.isArray</code>方法验证传入的值<code>value</code>的类型，并把验证结果赋值给变量<code>valid</code>。</p>
+<p>继续看剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 其他验证 =&gt; 自定义类型 (原型验证)</span></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  valid = value <span class="keyword">instanceof</span> type</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果期望类型即不是可以通过<code>typeof</code>判断的类型，也不是数组对象，那么这个值可能是一个自定义的类型，使用<code>instanceof</code>判断传入的值<code>vlaue</code>的原型是不是自定义的类型<code>type</code>。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 自定义类型</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Person</span>(<span class="params">name, age</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.nane = name</span><br><span class="line">  <span class="keyword">this</span>.age = age</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> Person(<span class="string">'Hale'</span>, <span class="number">18</span>)</span><br><span class="line">p <span class="keyword">instanceof</span> Person <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+
+<p>最后函数返回的一个对象，这个对象包含两个属性。</p>
+<ul>
+<li><code>valid</code>：验证的结果，是一个布尔值。</li>
+<li><code>expectedType</code>：定义（期望）的类型，是一个字符串。</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 返回验证结果和期望的类型</span></span><br><span class="line"><span class="keyword">return</span> &#123;</span><br><span class="line">  valid,</span><br><span class="line">  expectedType</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>讲解<code>assertType</code>函数的代码后，我们知道了类型是怎么验证的。</p>
+<p>再次回到<code>assertProp</code>函数中，看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 当验证失败时报错</span></span><br><span class="line"><span class="keyword">if</span> (!valid) &#123;</span><br><span class="line">  warn(getInvalidTypeMessage(name, value, expectedTypes), vm)</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当类型验证失败后，也就是<code>valid</code>的值是<code>false</code>时，会报错。</p>
+<p>继续看<code>assertProp</code>函数剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 自定义验证</span></span><br><span class="line"><span class="keyword">const</span> validator = prop.validator <span class="comment">// ! 获取用户自定义的验证器</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 把 value 作为参数传入并执行自定义验证器，</span></span><br><span class="line"><span class="comment">// ! 当它返回值为 false 时，验证失败，报错</span></span><br><span class="line"><span class="keyword">if</span> (validator) &#123;</span><br><span class="line">  <span class="keyword">if</span> (!validator(value)) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'Invalid prop: custom validator check failed for prop "'</span> + name + <span class="string">'".'</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>除了提高验证<code>JavaScript</code>的内置类型和自定义类型，<code>props</code>还提供了自定义验证。它不是验证值的类型，而是验证代码逻辑，即用户自定义的逻辑。</p>
+<p>自定义验证让用户声明一个函数，然后把外界传入的值作为参数传入到函数中进行验证。</p>
+<p>声明常量<code>validator</code>存储获取到的用户自定义的验证器，先判断自定义验证器是否存在，如果存在，把外界传入的值<code>value</code>作为参数传入到验证器函数中执行，如果验证器函数返回值是<code>true</code>，说明验证成功，不用进行其他操作；如果返回值是<code>false</code>，说明验证失败，然后报错。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">propsData: &#123;</span><br><span class="line">  list: [<span class="string">'apple'</span>, <span class="string">'banana'</span>, <span class="string">'orange'</span>]</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">props: &#123;</span><br><span class="line">  list: &#123;</span><br><span class="line">    validator: <span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> value.includes(<span class="string">'apple'</span>) <span class="comment">// true</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里，<code>props</code>选项的验证的代码就全部讲解完成，<code>props</code>选项的初始化也讲解完成。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/" title="Vue2源码学习笔记之Props">https://haledeng.com/blog/20190928-Vue2源码学习笔记之Props/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/" rel="prev" title="Vue2源码学习笔记之计算属性">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之计算属性
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/" rel="next" title="Vue2源码学习笔记之初始化终局">
+      Vue2源码学习笔记之初始化终局 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#props的初始化"><span class="nav-number">1.</span> <span class="nav-text">props的初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Props-的校验"><span class="nav-number">2.</span> <span class="nav-text">Props 的校验</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#getTypeIndex"><span class="nav-number">2.1.</span> <span class="nav-text">getTypeIndex</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#getPropDefaultValue"><span class="nav-number">2.2.</span> <span class="nav-text">getPropDefaultValue</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assertProp"><span class="nav-number">2.3.</span> <span class="nav-text">assertProp</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#assertType"><span class="nav-number">2.4.</span> <span class="nav-text">assertType</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

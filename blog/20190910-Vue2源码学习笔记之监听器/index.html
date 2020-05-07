@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Vue 最核心的地方就是它的响应式系统，这是它最核心的精华，也是明显区别于其他的框架像React、Angular的地方。 在上一章初始化实例属性的时候，讲解了initState函数，这个函数里面调用了一系列初始化选项的函数，为实例对象vm初始化了很多属性，这些属性大都是和响应式系统相关的。本章主要围绕initData函数来进行，因为初始化data选项几乎涉及到了响应式系统的全部内容。 先看下ini">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之监听器">
+<meta property="og:url" content="https://haledeng.com/blog/20190910-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%9B%91%E5%90%AC%E5%99%A8/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="Vue 最核心的地方就是它的响应式系统，这是它最核心的精华，也是明显区别于其他的框架像React、Angular的地方。 在上一章初始化实例属性的时候，讲解了initState函数，这个函数里面调用了一系列初始化选项的函数，为实例对象vm初始化了很多属性，这些属性大都是和响应式系统相关的。本章主要围绕initData函数来进行，因为初始化data选项几乎涉及到了响应式系统的全部内容。 先看下ini">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-10T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:57:41.517Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190910-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%9B%91%E5%90%AC%E5%99%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之监听器 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190910-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%9B%91%E5%90%AC%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之监听器
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-10 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-10T20:00:00+08:00">2019-09-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Vue 最核心的地方就是它的响应式系统，这是它最核心的精华，也是明显区别于其他的框架像<code>React</code>、<code>Angular</code>的地方。</p>
+<p>在上一章初始化实例属性的时候，讲解了<code>initState</code>函数，这个函数里面调用了一系列初始化选项的函数，为实例对象<code>vm</code>初始化了很多属性，这些属性大都是和响应式系统相关的。本章主要围绕<code>initData</code>函数来进行，因为初始化<code>data</code>选项几乎涉及到了响应式系统的全部内容。</p>
+<p>先看下<code>initData</code>函数在<code>initState</code>函数中的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (opts.data) &#123;</span><br><span class="line">  initData(vm)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  observe((vm._data = &#123;&#125;), <span class="literal">true</span> <span class="comment">/* asRootData */</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>opts</code>中是否有<code>data</code>属性，如果有的话，调用<code>initData</code>函数初始化<code>data</code>选项。</p>
+<p>如果没有的话，把实例对象的私有属性<code>_data</code>设置空对象，并调用<code>observe</code>函数监听这个空对象。</p>
+<p>其实，Vue 还对外提供了<code>$data</code> 属性让我们获取<code>data</code>的值，而<code>$data</code>代理的就是<code>_data</code>的值。</p>
+<a id="more"></a>
+
+<h2 id="initData"><a href="#initData" class="headerlink" title="initData"></a><code>initData</code></h2><p>下面来看下<code>initData</code>函数的代码，这是初始化<code>data</code>选项的函数。</p>
+<p>先看前面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">initData</span>(<span class="params">vm: Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> data = vm.$options.data</span><br><span class="line">  data = vm._data = <span class="keyword">typeof</span> data === <span class="string">'function'</span> ? getData(data, vm) : data || &#123;&#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先声明变量<code>data</code>存储<code>vm.$options.data</code>的值，然后判断<code>data</code>的是不是函数，如果是函数，调用<code>getData</code>函数获取<code>data</code>的值；如果不是函数，则<code>data</code>应该是一个对象，返回它或者一个空对象。</p>
+<p>现在看下<code>getData</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">getData</span>(<span class="params">data: Function, vm: Component</span>): <span class="title">any</span> </span>&#123;</span><br><span class="line">  <span class="comment">// #7573 disable dep collection when invoking data getters</span></span><br><span class="line">  pushTarget()</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> data.call(vm, vm)</span><br><span class="line">  &#125; <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">    handleError(e, vm, <span class="string">`data()`</span>)</span><br><span class="line">    <span class="keyword">return</span> &#123;&#125;</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    popTarget()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用了<code>try...catch...finally</code>语句来执行函数，以及捕获可能出现的错误，在<code>try</code>代码块中使用<code>call</code>方法调用<code>data</code>函数。这里传入了两个<code>vm</code>参数，第一个参数表示<code>this</code>指向实例对象<code>vm</code>，第二个参数表示传入实例对象作为函数的参数。</p>
+<p>再看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!isPlainObject(data)) &#123;</span><br><span class="line">  data = &#123;&#125;</span><br><span class="line">  process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'data functions should return an object:\n'</span> +</span><br><span class="line">        <span class="string">'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function'</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>data</code>是不是普通对象，如果不是，会把<code>data</code>设置成一个空对象，然后在非生产环境中报错，提示<code>data</code>的值必须是一个普通对象。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> keys = <span class="built_in">Object</span>.keys(data)</span><br><span class="line"><span class="keyword">const</span> props = vm.$options.props</span><br><span class="line"><span class="keyword">const</span> methods = vm.$options.methods</span><br><span class="line"><span class="keyword">let</span> i = keys.length</span><br><span class="line"><span class="keyword">while</span> (i--) &#123;</span><br><span class="line">  <span class="keyword">const</span> key = keys[i]</span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (methods &amp;&amp; hasOwn(methods, key)) &#123;</span><br><span class="line">      warn(<span class="string">`Method "<span class="subst">$&#123;key&#125;</span>" has already been defined as a data property.`</span>, vm)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (props &amp;&amp; hasOwn(props, key)) &#123;</span><br><span class="line">    process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">      warn(</span><br><span class="line">        <span class="string">`The data property "<span class="subst">$&#123;key&#125;</span>" is already declared as a prop. `</span> +</span><br><span class="line">          <span class="string">`Use prop default value instead.`</span>,</span><br><span class="line">        vm</span><br><span class="line">      )</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!isReserved(key)) &#123;</span><br><span class="line">    proxy(vm, <span class="string">`_data`</span>, key) <span class="comment">// ! 代理 data 上的属性 vm.xxx = vm._data.xxx</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先获取<code>data</code>选项的<code>keys</code>的值，再分别获取<code>props</code>和<code>methods</code>的值。然后通过递减<code>keys</code>值的长度来循环<code>keys</code>的值。在非生产环境中，如果<code>methods</code>选项的方法名也含有相同的<code>key</code>值会报错，提示<code>data</code>中已经定义过<code>key</code>的值。如果<code>props</code>选项中也含有相同名称的<code>key</code>时也会报错，提示<code>props</code>中已经定义过<code>key</code>的值。</p>
+<p>再判断<code>key</code>是不是 Vue 中的保留属性，Vue 中的保留属性就是以<code>$</code>或者<code>_</code>开头的属性，也就是说<code>data</code>选项中的数据的名称不能以<code>$</code>或者<code>_</code>开头。如果不是 Vue 的保留属性，会使用<code>proxy</code>函数来代理<code>data</code>上的属性。</p>
+<p>下面看下<code>proxy</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> sharedPropertyDefinition = &#123;</span><br><span class="line">  enumerable: <span class="literal">true</span>,</span><br><span class="line">  configurable: <span class="literal">true</span>,</span><br><span class="line">  <span class="keyword">get</span>: noop,</span><br><span class="line">  <span class="keyword">set</span>: noop</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">export function proxy(target: Object, sourceKey: string, key: string) &#123;</span><br><span class="line">  sharedPropertyDefinition.get = <span class="function"><span class="keyword">function</span> <span class="title">proxyGetter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>[sourceKey][key]</span><br><span class="line">  &#125;</span><br><span class="line">  sharedPropertyDefinition.set = <span class="function"><span class="keyword">function</span> <span class="title">proxySetter</span>(<span class="params">val</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>[sourceKey][key] = val</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">Object</span>.defineProperty(target, key, sharedPropertyDefinition)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数使得实例对象<code>vm</code>可以代理<code>data</code>选项的数据。比如，在我们访问<code>this.xxx</code>数据时，其实访问的是<code>this.data.xxx</code>数据。</p>
+<p><code>vm</code>除了会代理<code>data</code>选项的数据，还有代理<code>props</code>、<code>methods</code>和<code>computed</code>等选项中的值，所以这些选项里面的属性（方法）名不能重名。通过代理选项中属性，我们会更方便的使用这些选项上的属性（方法）。</p>
+<p>这里<strong>注意</strong>一下函数中的警告信息，在属性命名的优先等级上，Vue 认为<code>props</code>中的属性优先级应该比<code>data</code>高，而<code>data</code>的属性优先级应该比<code>methods</code>高。</p>
+<p>再看最后一行代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// observe data</span></span><br><span class="line">observe(data, <span class="literal">true</span> <span class="comment">/* asRootData */</span>)</span><br></pre></td></tr></table></figure>
+
+<p>使用<code>observe</code>函数监听<code>data</code>选项，把<code>data</code>选项的数据变成成响应式数据。这里传入第二个参数为<code>true</code>，作为根组件的<code>data</code>选项。</p>
+<p>其实，这句代码才是响应式系统的开始。</p>
+<h2 id="observe"><a href="#observe" class="headerlink" title="observe"></a><code>observe</code></h2><p>下面查看<code>observe</code>函数的代码，这是用于监听数据的函数。</p>
+<p>先看下前面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">observe</span>(<span class="params">value: any, asRootData: ?boolean</span>): <span class="title">Observer</span> | <span class="title">void</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ! 非虚拟节点的对象</span></span><br><span class="line">  <span class="keyword">if</span> (!isObject(value) || value <span class="keyword">instanceof</span> VNode) &#123;</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先看函数的参数，只有两个参数。第一个参数是需要监听的对象，第二个参数是一个布尔值，用来判断监听的对象是否是根组件数据。</p>
+<p>函数第一行代码判断语句定义了监听数据<code>value</code>的类型，只有是对象类型且不是虚拟节点才符合要求监听的要求，如果不能同时满足这两个条件，直接返回。</p>
+<p>再看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> ob: Observer | <span class="keyword">void</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 已经是监听对象了，获取 __ob__，不需要重复监听</span></span><br><span class="line"><span class="keyword">if</span> (hasOwn(value, <span class="string">'__ob__'</span>) &amp;&amp; value.__ob__ <span class="keyword">instanceof</span> Observer) &#123;</span><br><span class="line">  ob = value.__ob__</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (</span><br><span class="line">  shouldObserve &amp;&amp; <span class="comment">// ! 这个属性可以自由的控制对象是否监听</span></span><br><span class="line">  !isServerRendering() &amp;&amp;</span><br><span class="line">  (<span class="built_in">Array</span>.isArray(value) || isPlainObject(value)) &amp;&amp;</span><br><span class="line">  <span class="built_in">Object</span>.isExtensible(value) &amp;&amp; <span class="comment">// ! 对象可扩展，没有被 freeze</span></span><br><span class="line">  !value._isVue <span class="comment">// ! 不是 Vue 实例</span></span><br><span class="line">) &#123;</span><br><span class="line">  ob = <span class="keyword">new</span> Observer(value) <span class="comment">// ! 实例化一个监听对象</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先声明变量<code>ob</code>，它的类型是<code>Observer</code>或者<code>void</code>。</p>
+<p>然后判断<code>value</code>对象中是否有<code>__ob__</code>属性且<code>__ob__</code>必须是<code>Observer</code>类型的，如果满足这两个条件，说明<code>value</code>已经是一个监听的对象，不需要再重复监听，把<code>value.__ob__</code>属性赋值给<code>ob</code>即可；如果<code>value</code>不是监听对象，还必须要符合下面的五个条件，才能去监听<code>value</code>对象。</p>
+<p>我们先看下这五个条件，对象<code>value</code>必须全部满足这五个条件才能被监听。</p>
+<ol>
+<li><strong><code>shouldObserve</code></strong>：这是一个开关，默认为<code>true</code>。在某些特殊场景时，它的值会变成<code>false</code>，这里必须是<code>true</code>，可以通过<code>toggleObserving</code>函数来切换<code>shouldObserve</code>的值，这样我们就可以非常方便的控制哪些对象是否执行监听，这个条件很重要。</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * In some cases we may want to disable observation inside a component's</span></span><br><span class="line"><span class="comment"> * update computation.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">let</span> shouldObserve: boolean = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">toggleObserving</span>(<span class="params">value: boolean</span>) </span>&#123;</span><br><span class="line">  shouldObserve = value</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><p><strong><code>!isServerRendering()</code></strong>：调用<code>isServerRendering</code>函数可以判断当前是否处于服务端渲染的环境中。如果值为<code>true</code>，说明当前宿主环境不是浏览器环境，不符合监听条件，它的值必须是<code>false</code>才行。</p>
+</li>
+<li><p><strong><code>(Array.isArray(value) || isPlainObject(value))</code></strong>：监听的<code>value</code>必须是数组或者普通对象。</p>
+</li>
+<li><p><strong><code>Object.isExtensible(value)</code></strong>：监听的对象必须是一个可扩展的值。使一个对象变成不可扩展，有以下方法：<code>Object.preventExtensions()</code>、<code>Object.freeze()</code> 以及 <code>Object.seal()</code>，监听的对象必须没有使用过这些方法。</p>
+</li>
+<li><p><strong><code>!value._isVue</code></strong>：监听的对象不能是 Vue 的实例对象。在我们初始化 Vue 的实例对象时会添加一个<code>_isVue</code>属性，这个属性是一个标识，说明该对象是 Vue 的实例对象。</p>
+</li>
+</ol>
+<p>只有同时满足了上面的五个条件，才会调用<code>new</code>方法创建监听器对象，创建的时候需要把监听的对象<code>value</code>传入，并赋值给变量<code>ob</code>。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ob = <span class="keyword">new</span> Observer(value) <span class="comment">// ! 实例化一个监听对象</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Observer"><a href="#Observer" class="headerlink" title="Observer"></a><code>Observer</code></h2><p>下面看下<code>Observer</code>监听器的代码，这是一个类，用来创建监听器实例对象。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="class"><span class="keyword">class</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">  value: any</span><br><span class="line">  dep: Dep</span><br><span class="line">  vmCount: number <span class="comment">// number of vms that have this object as root $data</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">constructor</span>(value: any) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">  walk() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">  observeArray() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Observer</code>类有三个属性和两个方法，三个属性分别是<code>value</code>、<code>dep</code>和<code>vmCount</code>，两个方法分别是<code>walk</code>和<code>observeArray</code>。</p>
+<p>先看下类的构造函数，看前面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">constructor</span>(value: any) &#123;</span><br><span class="line"> 	<span class="keyword">this</span>.value = value</span><br><span class="line">	<span class="keyword">this</span>.dep = <span class="keyword">new</span> Dep()</span><br><span class="line">	<span class="keyword">this</span>.vmCount = <span class="number">0</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先初始化三个属性的值，其中<code>value</code>的值是引用传进来的参数<code>value</code>，也就是需要监听的对象。</p>
+<p><code>dep</code>是订阅器<code>Dep</code>的实例对象，主要是用来收集依赖（观察者）的。<code>vmCount</code>是组件标识，根组件的初始值是 0。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">def(value, <span class="string">'__ob__'</span>, <span class="keyword">this</span>) <span class="comment">// ! 自身实例添加到监听对象的 __ob__ 属性上 (__ob__监听对象标识)</span></span><br></pre></td></tr></table></figure>
+
+<p>使用<code>def</code>函数定义监听的对象<code>value</code>的属性<code>__ob__</code>为<code>Observer</code>实例对象本身。这里使用了<strong>循环引用</strong>，监听的对象<code>value</code>中有属性<code>__ob__</code>，它的值是<code>Observer</code>实例对象，而实例对象中也有<code>value</code>属性，它的值就是监听的对象<code>value</code>。这样我们可以很方便的从<code>__ob__</code>属性中获取它监听的对象<code>value</code>的值。</p>
+<p>实例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> data = &#123;</span><br><span class="line">  a: <span class="number">1</span>,</span><br><span class="line">  <span class="comment">// __ob__ 是不可枚举的属性</span></span><br><span class="line">  __ob__: &#123;</span><br><span class="line">    value: data, <span class="comment">// value 属性指向 data 数据对象本身，这是一个循环引用</span></span><br><span class="line">    dep: dep实例对象, <span class="comment">// new Dep()</span></span><br><span class="line">    vmCount: <span class="number">0</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看下<code>def</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">def</span>(<span class="params">obj: Object, key: string, val: any, enumerable?: boolean</span>) </span>&#123;</span><br><span class="line">  <span class="built_in">Object</span>.defineProperty(obj, key, &#123;</span><br><span class="line">    value: val,</span><br><span class="line">    enumerable: !!enumerable,</span><br><span class="line">    writable: <span class="literal">true</span>,</span><br><span class="line">    configurable: <span class="literal">true</span></span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>def</code>函数其实就是<code>Object.defineProperty</code>的简单封装，它的第四个参数<code>enumerable</code>是一个布尔值，用来设置定义的对象是否可以枚举。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 监听数组时</span></span><br><span class="line"><span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(value)) &#123;</span><br><span class="line">  <span class="comment">// ! 判断当前环境的对象中是否有 __proto__ 属性 （是否支持使用 __proto__）</span></span><br><span class="line">  <span class="keyword">if</span> (hasProto) &#123;</span><br><span class="line">    protoAugment(value, arrayMethods)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    copyAugment(value, arrayMethods, arrayKeys)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.observeArray(value) <span class="comment">// ! 再次监听数组，监听一些嵌套的数组</span></span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">this</span>.walk(value) <span class="comment">// ! 监听对象</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来是一个<code>if</code>语句，判断监听的对象的类型，如果监听的对象是一个数组，执行<code>if</code>中的代码块，否则执行<code>else</code>代码块。</p>
+<p>先看<code>else</code>代码块，也就是监听的对象是一个对象时，调用类的<code>walk</code>方法，并把监听的对象<code>value</code>作为参数传入，这个函数是用来监听<strong>对象类型</strong>的监听对象，它会把监听的对象中的属性变成响应式属性。</p>
+<p>下面查看类的<code>walk</code>方法的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">walk(obj: <span class="built_in">Object</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> keys = <span class="built_in">Object</span>.keys(obj)</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; keys.length; i++) &#123;</span><br><span class="line">    defineReactive(obj, keys[i])</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先获取传入的参数对象<code>obj</code>的<code>keys</code>值，这里指监听的对象<code>value</code>。</p>
+<p>然后遍历<code>keys</code>，在每次循环时调用了<code>defineReactive</code>函数，同时把对象<code>obj</code>和它的每一个<code>key</code>值作为参数传入。</p>
+<p><code>defineReactive</code>函数的作用就是把对象<code>obj</code>中的每一个<code>key</code>值都变成响应式属性。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190910-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%9B%91%E5%90%AC%E5%99%A8/" title="Vue2源码学习笔记之监听器">https://haledeng.com/blog/20190910-Vue2源码学习笔记之监听器/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190906-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%AE%9E%E4%BE%8B%E5%8C%96/" rel="prev" title="Vue2源码学习笔记之实例化">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之实例化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190912-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%93%8D%E5%BA%94%E5%BC%8F%E5%AE%9A%E4%B9%89/" rel="next" title="Vue2源码学习笔记之响应式定义">
+      Vue2源码学习笔记之响应式定义 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#initData"><span class="nav-number">1.</span> <span class="nav-text">initData</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#observe"><span class="nav-number">2.</span> <span class="nav-text">observe</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Observer"><span class="nav-number">3.</span> <span class="nav-text">Observer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前面章节主要通过initData函数在初始化data选项的过程来讲解 Vue 的响应式系统。 主要讲了响应式系统中的工厂函数observe和监听器Observer以及如何定义响应式属性的defineReactive函数。因为响应式的原理是使用Object.defineProperty来定义对象数据的，所以还需要对数组类型的数据进行特殊处理，重写数组的一些常用方法，使得数组中的元素也和对象里面的数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之组件的挂载">
+<meta property="og:url" content="https://haledeng.com/blog/20190919-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%BB%84%E4%BB%B6%E7%9A%84%E6%8C%82%E8%BD%BD/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="前面章节主要通过initData函数在初始化data选项的过程来讲解 Vue 的响应式系统。 主要讲了响应式系统中的工厂函数observe和监听器Observer以及如何定义响应式属性的defineReactive函数。因为响应式的原理是使用Object.defineProperty来定义对象数据的，所以还需要对数组类型的数据进行特殊处理，重写数组的一些常用方法，使得数组中的元素也和对象里面的数据">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-19T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:58:02.138Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190919-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%BB%84%E4%BB%B6%E7%9A%84%E6%8C%82%E8%BD%BD/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之组件的挂载 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190919-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%BB%84%E4%BB%B6%E7%9A%84%E6%8C%82%E8%BD%BD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之组件的挂载
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-19 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-19T20:00:00+08:00">2019-09-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>8.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>8 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>前面章节主要通过<code>initData</code>函数在初始化<code>data</code>选项的过程来讲解 Vue 的响应式系统。</p>
+<p>主要讲了响应式系统中的工厂函数<code>observe</code>和监听器<code>Observer</code>以及如何定义响应式属性的<code>defineReactive</code>函数。因为响应式的原理是使用<code>Object.defineProperty</code>来定义对象数据的，所以还需要对数组类型的数据进行特殊处理，重写数组的一些常用方法，使得数组中的元素也和对象里面的数据一样，可以收集依赖和触发依赖。</p>
+<a id="more"></a>
+
+<p>现在来看看 Vue 的观察者以及响应式数据是如何收集和触发依赖的。</p>
+<p>在完成所有选项的初始化之后，这时候就需要挂载组件了。查看<code>Vue.prototype._init</code>函数最后几行代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 如果设置了 el，就把实例对象挂载在该元素上</span></span><br><span class="line"><span class="keyword">if</span> (vm.$options.el) &#123;</span><br><span class="line">  vm.$mount(vm.$options.el)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="mount"><a href="#mount" class="headerlink" title="$mount"></a><code>$mount</code></h2><p>现在我们去查看 Vue 实例对象的 <code>$mount</code>方法的代码，因为挂载组件的<code>$mount</code>和平台涉及相关，这里只讲解 Web 平台的代码。另外，<code>$mount</code>方法还和版本相关，Runtime 版本中的<code>$mount</code>方法不涉及编译器代码，只有完成版本中的<code>$mount</code>方法才涉及到编译器代码。</p>
+<p>先查看 Runtime 版本中的<code>$mount</code>函数，在<code>platforms/web/runtime/index.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 安装 web 平台的挂载方法 $mount （这里是 runtime 版本）</span></span><br><span class="line">Vue.prototype.$mount = <span class="function"><span class="keyword">function</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  el?: string | Element,</span></span></span><br><span class="line"><span class="function"><span class="params">  hydrating?: boolean</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Component</span> </span>&#123;</span><br><span class="line">  el = el &amp;&amp; inBrowser ? query(el) : <span class="literal">undefined</span></span><br><span class="line">  <span class="keyword">return</span> mountComponent(<span class="keyword">this</span>, el, hydrating) <span class="comment">// ! 挂载组件</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先重写设置<code>el</code>的值，先判断是否传入<code>el</code>参数，如果传入的话，再判断当前的宿主环境是否是浏览器环境。如果在浏览器环境中，使用<code>query</code>函数并传入<code>el</code>，否则<code>el</code>为<code>undefiend</code>。</p>
+<p>看下<code>query</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">query</span>(<span class="params">el: string | Element</span>): <span class="title">Element</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> el === <span class="string">'string'</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> selected = <span class="built_in">document</span>.querySelector(el)</span><br><span class="line">    <span class="keyword">if</span> (!selected) &#123;</span><br><span class="line">      process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">        warn(<span class="string">'Cannot find element: '</span> + el)</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">document</span>.createElement(<span class="string">'div'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> selected</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> el</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>el</code>的类型可以是字符串也可以是<code>Element</code>，如果<code>el</code>是字符串的话，说明<code>el</code>应该是一个<code>CSS</code>选择器，调用原生的<code>document.querySelector</code>方法获取 DOM，如果找不到 DOM ，在非生产环境中会报错。</p>
+<p>如果<code>el</code>是一个<code>Element</code>，则直接返回它。最后输出到的<code>el</code>一定是<code>Element</code>类型。</p>
+<p><code>$mount</code>函数最后再调用<code>mountComponent</code>函数，并传入三个参数，分别是 Vue 的实例对象<code>this</code>、获取到的元素<code>el</code>以及布尔值<code>hydrating</code>。</p>
+<p>先不去管<code>mountComponent</code>函数，现在查看完整版本的<code>$mount</code>方法，在<code>platforms/web/entry-runtime-with-compiler.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> mount = Vue.prototype.$mount <span class="comment">// ! 缓存 runtime 版本的 $mount 方法</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 重写 $mount 方法 with compiler</span></span><br><span class="line">Vue.prototype.$mount = <span class="function"><span class="keyword">function</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  el?: string | Element,</span></span></span><br><span class="line"><span class="function"><span class="params">  hydrating?: boolean</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Component</span> </span>&#123;</span><br><span class="line">  el = el &amp;&amp; query(el)</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="keyword">return</span> mount.call(<span class="keyword">this</span>, el, hydrating) <span class="comment">// ! 调用 runtime mount 方法</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在文件中先声明常量<code>mount</code>缓存 Runtime 版本的<code>$mount</code>，然后重写了<code>Vue.prototype.$mount</code>方法，看下重写方法的第一行代码，还是通过<code>query</code>获取 <code>DOM</code> 。再看最后一行的代码，调用 Runtime 版本的<code>$mount</code>，并传入相同的参数。</p>
+<p>现在看下重写方法中间的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 不能挂载在 body 和 html 标签上</span></span><br><span class="line"><span class="keyword">if</span> (el === <span class="built_in">document</span>.body || el === <span class="built_in">document</span>.documentElement) &#123;</span><br><span class="line">  process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Do not mount Vue to &lt;html&gt; or &lt;body&gt; - mount to normal elements instead.`</span></span><br><span class="line">    )</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断获取的元素是不是<code>document.body</code>或者<code>document.documentElement</code>，如果是的话在非生产环境中会报错。因为 Vue 的实例对象挂载在元素上是会替换掉这个元素的，这样的话就会把<code>body</code>和<code>html</code>标签元素替换掉，而这两个元素是不应该被替换掉的。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> options = <span class="keyword">this</span>.$options</span><br><span class="line"><span class="comment">// resolve template/el and convert to render function</span></span><br><span class="line"><span class="comment">// ! 如果没有渲染函数，使用 template 或者 el 构建渲染函数</span></span><br><span class="line"><span class="keyword">if</span> (!options.render) &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明变量<code>option</code>存储合并后的选项<code>vm.$options</code>，然后判断渲染函数<code>options.render</code>是否存在，如果不存在，则使用<code>template</code>或者<code>el</code>选项构建渲染函数。</p>
+<p>这里先提前说下后面代码的主要逻辑，先判断是否存在<code>template</code>选项，如果存在，则使用<code>template</code>选项的值获取<code>template</code>；如果不存在，判断是否存在<code>el</code>选项，如果存在<code>el</code>选项则使用<code>el</code>选项获取<code>template</code>的值。总之一定要获取到<code>template</code>，而且它都值必须是<code>Element</code>类型，这样才能挂载组件。</p>
+<p>现在看下如何使用<code>template</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> template = options.template</span><br><span class="line"><span class="comment">// ! 获取 template 的值</span></span><br><span class="line"><span class="comment">// ! 优先从 template 选项中获取</span></span><br><span class="line"><span class="keyword">if</span> (template) &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> template === <span class="string">'string'</span>) &#123;</span><br><span class="line">    <span class="comment">// ! id 选择器</span></span><br><span class="line">    <span class="keyword">if</span> (template.charAt(<span class="number">0</span>) === <span class="string">'#'</span>) &#123;</span><br><span class="line">      template = idToTemplate(template)</span><br><span class="line">      <span class="comment">/* istanbul ignore if */</span></span><br><span class="line">      <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp; !template) &#123;</span><br><span class="line">        warn(</span><br><span class="line">          <span class="string">`Template element not found or is empty: <span class="subst">$&#123;options.template&#125;</span>`</span>,</span><br><span class="line">          <span class="keyword">this</span></span><br><span class="line">        )</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先声明变量<code>options</code>存储<code>options.template</code>的值。</p>
+<p>然后判断<code>template</code>是不是一个字符串，如果是的话，再判断它是不是以<code>#</code>开头，如果是的话，就可以确定<code>template</code>应该是一个<code>CSS</code>的<code>id</code>选择器，调用<code>idToTemplate</code>函数通过这个选择器获取元素。</p>
+<p>看下<code>idToTemplate</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 通过 id 获取元素的 innerHTML</span></span><br><span class="line"><span class="keyword">const</span> idToTemplate = cached(<span class="function"><span class="params">id</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> el = query(id)</span><br><span class="line">  <span class="keyword">return</span> el &amp;&amp; el.innerHTML</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>这个函数通过<code>id</code>选择器来获取元素，并返回元素的<code>innerHTML</code>。</p>
+<p>如果获取不到元素的<code>innerHTML</code>作为<code>template</code>的值，在非生产环境中会报错，提示找不到模板元素或者模板元素是空的。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 元素类型</span></span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (template.nodeType) &#123;</span><br><span class="line">  template = template.innerHTML</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果<code>template</code>有<code>nodeType</code>属性，说明它是一个元素，直接获取它的<code>innerHtml</code>的值。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 其他无效的 template 报错</span></span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    warn(<span class="string">'invalid template option:'</span> + template, <span class="keyword">this</span>)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续分析<code>template</code>的其他情况，即无效的<code>template</code>。此时如果在非生产环境中会报错，提示<code>template</code>选项是无效的。</p>
+<p>下面看使用<code>el</code>的情况</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (template) &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// ! 其次从 el 选项获取</span></span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (el) &#123;</span><br><span class="line">  template = getOuterHTML(el)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>templatetemplate</code>无法获取有效的元素时，如果有<code>el</code>选项，通过调用<code>getOuterHTML</code>函数获取元素。</p>
+<p><strong>注意这里的<code>el</code>是<code>Element</code>类型</strong>，为什么不是字符串类型的呢？如果在 Runtime 版本时，<code>el</code>可以是字符串类型，即它是一个<code>CSS</code>选择器，然后通过选择器可以获取元素。</p>
+<p>但是在完整版本中，这里需要一个<code>Element</code>类型的<code>template</code>，在前面的逻辑中没有通过<code>template</code>选项获取到<code>template</code>的值，所以这里必须是一个<code>Element</code>类型的值。</p>
+<p>看下<code>getOuterHTML</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">getOuterHTML</span>(<span class="params">el: Element</span>): <span class="title">string</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (el.outerHTML) &#123;</span><br><span class="line">    <span class="keyword">return</span> el.outerHTML</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> container = <span class="built_in">document</span>.createElement(<span class="string">'div'</span>)</span><br><span class="line">    container.appendChild(el.cloneNode(<span class="literal">true</span>))</span><br><span class="line">    <span class="keyword">return</span> container.innerHTML</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>el</code>元素是否有<code>outerHTML</code>，如果有的话，直接返回它的<code>outerHTML</code>。如果没有的话，创建一个<code>div</code>容器，然后把<code>el</code>元素的克隆值放入容器中，最后返回容器的<code>innerHTML</code>，也就是返回<code>el</code>元素。</p>
+<p>为什么不直接创建一个元素再返回它呢？因为有的元素可能没有<code>innerHTML</code>或者<code>outerHTML</code>属性，比如<code>SVG</code>标签元素在 <code>IE 9-11</code>时就没有<code>innerHTML</code>和<code>outerHTML</code>属性。此时，如果<code>el</code>选项是<code>SVG</code>标签元素就会出错。如果先创建一个<code>div</code>容器元素，然后把一个克隆元素放进去，再返回容器元素的<code>innerHTML</code>就不会有问题，因为这个容器元素的<code>innerHTML</code>是一定存在的。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (template) &#123;</span><br><span class="line">  <span class="comment">/* istanbul ignore if */</span></span><br><span class="line">  <span class="comment">// ! 测试编译性能之开始</span></span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp; config.performance &amp;&amp; mark) &#123;</span><br><span class="line">    mark(<span class="string">'compile'</span>)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">/* istanbul ignore if */</span></span><br><span class="line">  <span class="comment">// ! 测试编译性能之结束</span></span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp; config.performance &amp;&amp; mark) &#123;</span><br><span class="line">    mark(<span class="string">'compile end'</span>)</span><br><span class="line">    measure(<span class="string">`vue <span class="subst">$&#123;<span class="keyword">this</span>._name&#125;</span> compile`</span>, <span class="string">'compile'</span>, <span class="string">'compile end'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在获取到<code>template</code>元素后，执行下面的编译操作。</p>
+<p>这里在非生产环境中测试<code>compile</code>的性能。</p>
+<p>再看下性能测试的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 生成渲染函数</span></span><br><span class="line"><span class="keyword">const</span> &#123; render, staticRenderFns &#125; = compileToFunctions(</span><br><span class="line">  template,</span><br><span class="line">  &#123;</span><br><span class="line">    outputSourceRange: process.env.NODE_ENV !== <span class="string">'production'</span>,</span><br><span class="line">    shouldDecodeNewlines,</span><br><span class="line">    shouldDecodeNewlinesForHref,</span><br><span class="line">    delimiters: options.delimiters, <span class="comment">// ! 分隔符配置，是个数组，默认是 ["&#123;&#123;", "&#125;&#125;"]</span></span><br><span class="line">    comments: options.comments <span class="comment">// ! 评论配置</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="keyword">this</span></span><br><span class="line">)</span><br><span class="line">options.render = render</span><br><span class="line">options.staticRenderFns = staticRenderFns</span><br></pre></td></tr></table></figure>
+
+<p>通过调用<code>compileToFunctions</code>函数生成了渲染函数<code>render</code>和静态渲染函数<code>staticRenderFns</code>。然后把它们存储在<code>options</code>中，即存储在<code>vm.$options</code>中。</p>
+<p><strong>小结</strong>，完整版本的<code>$mount</code>方法继承了 Runtime 版本的方法，然后把模板字符串编译成渲染函数，并把渲染方法存储在<code>vm.$options</code>中。</p>
+<h2 id="mountComponent"><a href="#mountComponent" class="headerlink" title="mountComponent"></a><code>mountComponent</code></h2><p>下面我们来看下<code>mountComponentmountComponent</code>函数，<code>$mount</code>方法最终都会调用的这个函数，它才是真正挂载组件的方法，这个函数在<code>core/instance/lifecycle.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 挂载组件的函数</span></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">mountComponent</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  vm: Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  el: ?Element,</span></span></span><br><span class="line"><span class="function"><span class="params">  hydrating?: boolean</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Component</span> </span>&#123;</span><br><span class="line">  vm.$el = el <span class="comment">// ! 更新 $el 属性</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用传进来的参数<code>el</code>更新<code>vm.$el</code>的值。<strong>注意</strong>，这里<code>vm.$el</code>的值也不是最后真正挂载的元素，后面再讲解。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!vm.$options.render) &#123;</span><br><span class="line">  vm.$options.render = createEmptyVNode <span class="comment">// ! render 会生成一个空的 VNode</span></span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    <span class="comment">/* istanbul ignore if */</span></span><br><span class="line">    <span class="keyword">if</span> (</span><br><span class="line">      (vm.$options.template &amp;&amp; vm.$options.template.charAt(<span class="number">0</span>) !== <span class="string">'#'</span>) ||</span><br><span class="line">      vm.$options.el ||</span><br><span class="line">      el</span><br><span class="line">    ) &#123;</span><br><span class="line">      warn(</span><br><span class="line">        <span class="string">'You are using the runtime-only build of Vue where the template '</span> +</span><br><span class="line">          <span class="string">'compiler is not available. Either pre-compile the templates into '</span> +</span><br><span class="line">          <span class="string">'render functions, or use the compiler-included build.'</span>,</span><br><span class="line">        vm</span><br><span class="line">      )</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      warn(</span><br><span class="line">        <span class="string">'Failed to mount component: template or render function not defined.'</span>,</span><br><span class="line">        vm</span><br><span class="line">      )</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断 Vue 的实例对象中是否存在渲染函数<code>render</code>，如果不存在，渲染函数会被赋值为一个生成一个空的<code>VNode</code>（虚拟节点）的函数，然后在非生产环境中，判断<code>template</code>是否以<code>#</code>开头或者存在<code>el</code>，如果是的话，会警告在 Runtime 环境中无法编译元素；如果不是的话，会警告<code>template</code>或者渲染函数未定义。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">callHook(vm, <span class="string">'beforeMount'</span>) <span class="comment">// ! 挂载组件之前，调用 beforeMount 钩子函数</span></span><br></pre></td></tr></table></figure>
+
+<p>在挂载组件之前，执行<code>beforeMount</code>生命周期钩子函数。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 更新组件的函数</span></span><br><span class="line"><span class="keyword">let</span> updateComponent</span><br><span class="line"><span class="comment">/* istanbul ignore if */</span></span><br><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp; config.performance &amp;&amp; mark) &#123;</span><br><span class="line">  updateComponent = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> name = vm._name</span><br><span class="line">    <span class="keyword">const</span> id = vm._uid</span><br><span class="line">    <span class="keyword">const</span> startTag = <span class="string">`vue-perf-start:<span class="subst">$&#123;id&#125;</span>`</span></span><br><span class="line">    <span class="keyword">const</span> endTag = <span class="string">`vue-perf-end:<span class="subst">$&#123;id&#125;</span>`</span></span><br><span class="line"></span><br><span class="line">    mark(startTag) <span class="comment">// ! 开始统计 _render 函数性能</span></span><br><span class="line">    <span class="keyword">const</span> vnode = vm._render() <span class="comment">// ! 生成 VNode</span></span><br><span class="line">    mark(endTag)</span><br><span class="line">    measure(<span class="string">`vue <span class="subst">$&#123;name&#125;</span> render`</span>, startTag, endTag)</span><br><span class="line"></span><br><span class="line">    mark(startTag) <span class="comment">// ! 开始统计 _update 函数性能</span></span><br><span class="line">    vm._update(vnode, hydrating) <span class="comment">// ! 将 VNode 渲染到真实 `DOM` 中</span></span><br><span class="line">    mark(endTag)</span><br><span class="line">    measure(<span class="string">`vue <span class="subst">$&#123;name&#125;</span> patch`</span>, startTag, endTag)</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先声明一个公共的变量<code>updateComponent</code>用来存储函数，在生产环境和非生产环境中这个函数有一点不一样，因为在非生产环境中需要测量函数里面的<code>vm._render</code>方法和<code>vm._update</code>方法的性能。</p>
+<p>这两个方法的作用分别是：</p>
+<ul>
+<li><code>vm._render</code>：调用 <code>vm.$options.render</code> 函数并返回生成的虚拟节点(<code>vnode</code>)。</li>
+<li><code>vm._update</code>：把 <code>vm._render</code> 函数生成的虚拟节点渲染成真正的元素。</li>
+</ul>
+<p>先看下生产环境的中<code>updateComponent</code>函数的代码，只有一行代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">updateComponent = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  vm._update(vm._render(), hydrating) <span class="comment">// ! 把 _render 生成的 VNode 渲染成真实的 `DOM`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>逻辑很简单，调用<code>vm._update</code>方法把<code>vm._render</code>方法生成的<code>VNode</code>渲染成真实的元素。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 生成观察者实例</span></span><br><span class="line"><span class="keyword">new</span> Watcher(</span><br><span class="line">  vm,</span><br><span class="line">  updateComponent, <span class="comment">// ! 更新组件的函数，执行时 -&gt; 执行 vm.$options.render -&gt; getter -&gt; 收集依赖</span></span><br><span class="line">  noop,</span><br><span class="line">  &#123;</span><br><span class="line">    before() &#123;</span><br><span class="line">      <span class="keyword">if</span> (vm._isMounted &amp;&amp; !vm._isDestroyed) &#123;</span><br><span class="line">        callHook(vm, <span class="string">'beforeUpdate'</span>) <span class="comment">// ! 传入 beforeUpdate 生命周期钩子函数，在更新前组件前调用</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="literal">true</span> <span class="comment">/* isRenderWatcher */</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>new</code>操作符生成一个观察者<code>Watcher</code>实例对象。</p>
+<p>到这里，响应式系统的观察者也终于露出水面了。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190919-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%BB%84%E4%BB%B6%E7%9A%84%E6%8C%82%E8%BD%BD/" title="Vue2源码学习笔记之组件的挂载">https://haledeng.com/blog/20190919-Vue2源码学习笔记之组件的挂载/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190917-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BSet%E5%92%8CDel/" rel="prev" title="Vue2源码学习笔记之Set和Del">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之Set和Del
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190921-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85/" rel="next" title="Vue2源码学习笔记之观察者">
+      Vue2源码学习笔记之观察者 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#mount"><span class="nav-number">1.</span> <span class="nav-text">$mount</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mountComponent"><span class="nav-number">2.</span> <span class="nav-text">mountComponent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

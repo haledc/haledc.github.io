@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="set 函数下面看下set函数，我们在扩展 Vue 的构造函数的原型对象时创建Vue.prototype.$set方法，然后在扩展 Vue 的构造函数的静态方法时创建Vue.set方法，这两个方法所赋值的函数都是set函数。 在 Vue 的官方文档中，提供了这两个 API 供用户使用，用来向响应式对象中添加一个属性，并确保这个新属性同样是响应式的，且触发视图更新。它必须用于响应式对象上添加新属性，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之Set和Del">
+<meta property="og:url" content="https://haledeng.com/blog/20190917-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BSet%E5%92%8CDel/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="set 函数下面看下set函数，我们在扩展 Vue 的构造函数的原型对象时创建Vue.prototype.$set方法，然后在扩展 Vue 的构造函数的静态方法时创建Vue.set方法，这两个方法所赋值的函数都是set函数。 在 Vue 的官方文档中，提供了这两个 API 供用户使用，用来向响应式对象中添加一个属性，并确保这个新属性同样是响应式的，且触发视图更新。它必须用于响应式对象上添加新属性，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-17T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:57:57.165Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190917-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BSet%E5%92%8CDel/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之Set和Del | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190917-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BSet%E5%92%8CDel/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之Set和Del
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-17 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-17T20:00:00+08:00">2019-09-17</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="set-函数"><a href="#set-函数" class="headerlink" title="set 函数"></a><code>set</code> 函数</h2><p>下面看下<code>set</code>函数，我们在扩展 Vue 的构造函数的原型对象时创建<code>Vue.prototype.$set</code>方法，然后在扩展 Vue 的构造函数的静态方法时创建<code>Vue.set</code>方法，这两个方法所赋值的函数都是<code>set</code>函数。</p>
+<p>在 Vue 的官方文档中，提供了这两个 API 供用户使用，用来向响应式对象中添加一个属性，并确保这个新属性同样是响应式的，且触发视图更新。它必须用于响应式对象上添加新属性，因为 Vue 无法探测普通的新增属性。另外，注意设置的对象不能是 Vue 实例或者 Vue 实例的根数据对象。</p>
+<a id="more"></a>
+
+<p>下面查看<code>set</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">set</span>(<span class="params">target: Array&lt;any&gt; | Object, key: any, val: any</span>): <span class="title">any</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (</span><br><span class="line">    process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">    (isUndef(target) || isPrimitive(target))</span><br><span class="line">  ) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Cannot set reactive property on undefined, null, or primitive value: <span class="subst">$&#123;(target: any)&#125;</span>`</span></span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先在非生产环境中，判断<code>taregt</code>的类型是不是未定义的值或者是一个原始类型的值，如果满足其中之一的话会报错，并提示不能设置<code>null</code>、<code>undefined</code>或者原始类型中的响应式属性。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! target 是数组且 key 有效时</span></span><br><span class="line"><span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(target) &amp;&amp; isValidArrayIndex(key)) &#123;</span><br><span class="line">  target.length = <span class="built_in">Math</span>.max(target.length, key) <span class="comment">// ! 修改数组长度 key, 否则大于原数组长度时 splice 无效</span></span><br><span class="line">  target.splice(key, <span class="number">1</span>, val) <span class="comment">// ! 使用重写的 splice 增加或者替换元素，并触发响应</span></span><br><span class="line">  <span class="keyword">return</span> val</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果定义的响应式对象是数组时且它里面的<code>key</code>值是有效值时，先获取数组长度和<code>key</code>的中最大值，把它设置为<code>taregt</code>的长度。为什么要这样做呢？因为如果设置的<code>key</code>大于原来<code>taregt</code>的长度，使用<code>splice</code>是插入元素时，插入后的元素在数组中的位置会不正确，即索引不正确。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> arr = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>] <span class="comment">// length = 3</span></span><br><span class="line"><span class="keyword">const</span> key = <span class="number">5</span></span><br><span class="line">arr.splice(key, <span class="number">1</span>, <span class="number">4</span>)</span><br><span class="line"><span class="built_in">console</span>.log(arr) <span class="comment">// [ 1, 2, 3, 4 ]</span></span><br></pre></td></tr></table></figure>
+
+<p>上面代码中 key 是<code>5</code>，它比数组<code>arr</code>的长度<code>3</code>要大，把数字<code>4</code>传入到<code>key</code>的位置后，它的位置是错误的。</p>
+<p>如果修改了<code>target</code>的长度为<code>key</code>和原来长度的最大值后，插入后的位置是不一样的。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> arr = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="keyword">const</span> key = <span class="number">5</span></span><br><span class="line">arr.length = <span class="built_in">Math</span>.max(arr.length, key)</span><br><span class="line">arr.splice(key, <span class="number">1</span>, <span class="number">4</span>)</span><br><span class="line"><span class="built_in">console</span>.log(arr) <span class="comment">// [ 1, 2, 3, &lt;2 empty items&gt;, 4 ]</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! key 已经存在对象 target 且不在它的原型中时</span></span><br><span class="line"><span class="keyword">if</span> (key <span class="keyword">in</span> target &amp;&amp; !(key <span class="keyword">in</span> <span class="built_in">Object</span>.prototype)) &#123;</span><br><span class="line">  target[key] = val <span class="comment">// ! 直接修改原来的值，会自动触发 setter</span></span><br><span class="line">  <span class="keyword">return</span> val</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>设置的<code>key</code>已经存在于响应式对象中但不在它的原型对象上时，直接赋值即可，会自动触发<code>setter</code>，最后返回设置的新值。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 获取原对象的 __ob__ 属性</span></span><br><span class="line"><span class="keyword">const</span> ob = (target: any).__ob__</span><br><span class="line"><span class="comment">// ! 不允许设置 Vue 实例 和 根实例数据对象（根 data 不是响应式的）的属性</span></span><br><span class="line"><span class="keyword">if</span> (target._isVue || (ob &amp;&amp; ob.vmCount)) &#123;</span><br><span class="line">  process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'Avoid adding reactive properties to a Vue instance or its root $data '</span> +</span><br><span class="line">        <span class="string">'at runtime - declare it upfront in the data option.'</span></span><br><span class="line">    )</span><br><span class="line">  <span class="keyword">return</span> val</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>ob</code>存储<code>target</code>的<code>__ob__</code>属性，判断<code>target</code>是否有<code>_isVue</code>属性或者<code>ob.vmCount</code>的值是否大于零。如果同时满足其中的一个条件且在非生产环境中会报错，提示不能设置 Vue 实例对象的属性或者根组件的<code>data</code>选项的值，最后返回设置的值<code>val</code>。</p>
+<p>继续看剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 原对象不是响应式对象，新属性直接赋值并返回</span></span><br><span class="line"><span class="keyword">if</span> (!ob) &#123;</span><br><span class="line">  target[key] = val</span><br><span class="line">  <span class="keyword">return</span> val</span><br><span class="line">&#125;</span><br><span class="line">defineReactive(ob.value, key, val) <span class="comment">// ! 新属性变成响应式</span></span><br><span class="line">ob.dep.notify() <span class="comment">// ! 手动触发依赖</span></span><br><span class="line"><span class="keyword">return</span> val</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>ob</code>是否存在，即判断<code>taregt</code>是否是一个响应式对象，如果不是的话，直接给它的<code>key</code>赋值为<code>val</code>，并返回<code>val</code>。</p>
+<p>如果<code>taregt</code>是一个响应式对象，把它新增的值也变成响应式数据，然后手动触发依赖，并返回设置的值<code>val</code>。</p>
+<p><strong>小结</strong>，虽然 Vue 的官方文档中说明只能是为响应式数据设置值，但是它的代码中也可以为非响应式的对象设置值，不过我们在实际开发中没有必要这样，因为可以直接在这个对象上操作，而不需要额外使用这个 API。</p>
+<h2 id="del"><a href="#del" class="headerlink" title="del"></a><code>del</code></h2><p>下面看下<code>del</code>函数，我们在扩展 Vue 的构造函数的原型对象时创建<code>Vue.prototype.$delete</code>方法，然后在扩展 Vue 的构造函数的静态方法时创建<code>Vue.delete</code>方法，这两个方法所赋值的函数都是<code>del</code>函数。</p>
+<p>在 Vue 的文档中，提供了这两个 API 供用户使用，用来删除对象的属性。如果对象是响应式对象，确保删除值能触发依赖，更新视图。如果不是响应式对象，直接删除它即可。</p>
+<p>这个方法是为了避开 Vue 不能检测到属性被删除的限制，但是你应该很少会使用它。</p>
+<p>下面查看<code>del</code>函数的代码，它的结构和<code>set</code>函数很相似，下面结合<code>set</code>来对比讲解</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">del</span>(<span class="params">target: Array&lt;any&gt; | Object, key: any</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (</span><br><span class="line">    process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">    (isUndef(target) || isPrimitive(target))</span><br><span class="line">  ) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Cannot delete reactive property on undefined, null, or primitive value: <span class="subst">$&#123;(target: any)&#125;</span>`</span></span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先和<code>set</code>函数一样，判断<code>taregt</code>的类型是不是未定义的值或者是一个原始类型的值，如果满足其中之一的话会报错，并提示不能删除<code>null</code>、<code>undefined</code>或者原始类型中的响应式属性。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(target) &amp;&amp; isValidArrayIndex(key)) &#123;</span><br><span class="line">  target.splice(key, <span class="number">1</span>) <span class="comment">// ! splice 删除元素，并触发响应</span></span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>taregt</code>的类型是不是数组且它的索引是否有效的，如果都满足条件的话，直接调用<code>splice</code>删除索引<code>key</code>位置的值即可。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> ob = (target: any).__ob__</span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 不能删除 Vue 实例 和 根实例数据对象（根 data 不是响应式的）的属性</span></span><br><span class="line"><span class="keyword">if</span> (target._isVue || (ob &amp;&amp; ob.vmCount)) &#123;</span><br><span class="line">  process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'Avoid deleting properties on a Vue instance or its root $data '</span> +</span><br><span class="line">        <span class="string">'- just set it to null.'</span></span><br><span class="line">    )</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>和<code>set</code>函数中逻辑的一样，声明常量<code>ob</code>存储<code>target</code>的<code>__ob__</code>属性，判断<code>target</code>是否有<code>_isVue</code>属性或者<code>ob.vmCount</code>的值是否大于零。如果同时满足其中的一个条件且在开发中会报错，提示不能删除 Vue 实例对象的属性或者根组件的<code>data</code>选项的值，最后直接返回。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 没有要删除的属性</span></span><br><span class="line"><span class="keyword">if</span> (!hasOwn(target, key)) &#123;</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">delete</span> target[key] <span class="comment">// ! 删除目标的字段</span></span><br></pre></td></tr></table></figure>
+
+<p>如果<code>target</code>对象上没有要删除的<code>key</code>值，直接返回。如果有的话，调用<code>delete</code>运算符删除<code>target</code>中的<code>key</code>字段或者索引。</p>
+<p>继续看剩下最后的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 目标不是响应式，不处理</span></span><br><span class="line"><span class="keyword">if</span> (!ob) &#123;</span><br><span class="line">  <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line">ob.dep.notify() <span class="comment">// ! 手动触发依赖</span></span><br></pre></td></tr></table></figure>
+
+<p>如果<code>ob</code>不存在，即<code>taregt</code>不是响应式对象，那么直接返回，不做处理。如果是响应式对象，手动触发依赖，更新视图。</p>
+<p>注意<code>del</code>不需要返回值，也不需要返回一个布尔值来表示删除属性是否成功，这也从侧面说明这个函数关联的<code>Vue.delete</code>和<code>vm.$delete</code> 的 API 使用的场景非常少。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190917-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BSet%E5%92%8CDel/" title="Vue2源码学习笔记之Set和Del">https://haledeng.com/blog/20190917-Vue2源码学习笔记之Set和Del/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190915-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E6%95%B0%E7%BB%84%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F/" rel="prev" title="Vue2源码学习笔记之数组的响应性">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之数组的响应性
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190919-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%BB%84%E4%BB%B6%E7%9A%84%E6%8C%82%E8%BD%BD/" rel="next" title="Vue2源码学习笔记之组件的挂载">
+      Vue2源码学习笔记之组件的挂载 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#set-函数"><span class="nav-number">1.</span> <span class="nav-text">set 函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#del"><span class="nav-number">2.</span> <span class="nav-text">del</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

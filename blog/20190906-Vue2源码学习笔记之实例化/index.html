@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在前面我们讲解 Vue 的实例化时，单独用了两章讲解 Vue 的选项合并的内容，下面开始真正学习 Vue 的实例化。 继续看_init函数下面的代码，在文件core&#x2F;instance&#x2F;init.js中 1234567&#x2F;* istanbul ignore else *&#x2F;&#x2F;&#x2F; ! 初始化代理if (process.env.NODE_ENV !&#x3D;&#x3D; &#39;production&#39;) &amp;#123;  initP">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之实例化">
+<meta property="og:url" content="https://haledeng.com/blog/20190906-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%AE%9E%E4%BE%8B%E5%8C%96/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="在前面我们讲解 Vue 的实例化时，单独用了两章讲解 Vue 的选项合并的内容，下面开始真正学习 Vue 的实例化。 继续看_init函数下面的代码，在文件core&#x2F;instance&#x2F;init.js中 1234567&#x2F;* istanbul ignore else *&#x2F;&#x2F;&#x2F; ! 初始化代理if (process.env.NODE_ENV !&#x3D;&#x3D; &#39;production&#39;) &amp;#123;  initP">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-06T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:57:35.665Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190906-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%AE%9E%E4%BE%8B%E5%8C%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之实例化 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190906-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%AE%9E%E4%BE%8B%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之实例化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-06 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-06T20:00:00+08:00">2019-09-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>13k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>11 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在前面我们讲解 Vue 的实例化时，单独用了两章讲解 Vue 的选项合并的内容，下面开始真正学习 Vue 的实例化。</p>
+<p>继续看<code>_init</code>函数下面的代码，在文件<code>core/instance/init.js</code>中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* istanbul ignore else */</span></span><br><span class="line"><span class="comment">// ! 初始化代理</span></span><br><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  initProxy(vm)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  vm._renderProxy = vm</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在前面讲解中只是提到在非生产环境和生产环境的代码实现结果必须一致，所以<code>initProxy</code>的函数的作用应该为实例对象<code>vm</code>添加属性<code>_renderProxy</code>为<code>vm</code>。真的是这样吗？</p>
+<a id="more"></a>
+
+<h2 id="initProxy"><a href="#initProxy" class="headerlink" title="initProxy"></a><code>initProxy</code></h2><p>查看下<code>initProxy</code> 的代码，在<code>core/instance/proxy.js</code>中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> initProxy</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  initProxy = <span class="function"><span class="keyword">function</span> <span class="title">initProxy</span>(<span class="params">vm</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (hasProxy) &#123;</span><br><span class="line">      <span class="comment">// determine which proxy handler to use</span></span><br><span class="line">      <span class="keyword">const</span> options = vm.$options</span><br><span class="line">      <span class="keyword">const</span> handlers =</span><br><span class="line">        options.render &amp;&amp; options.render._withStripped ? getHandler : hasHandler</span><br><span class="line">      vm._renderProxy = <span class="keyword">new</span> <span class="built_in">Proxy</span>(vm, handlers) <span class="comment">// ! 使用代理</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      vm._renderProxy = vm <span class="comment">// ! 和生产环境一样直接赋值</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里必须是在非生产环境中，先判断宿主环境（这里都指浏览器）是否支持<code>Proxy</code>语法，如果不支持，那么就和生产环境一样，直接赋值<code>_renderProxy</code>为<code>vm</code>。</p>
+<p>如果支持，首先声明变量<code>options</code>存储合并后的选项<code>vm.$options</code>，<strong>现在初始化实例的各类属性方法都和选项<code>options</code>相关</strong>。</p>
+<p>然后声明常量<code>handlers</code>存储代理使用的处理器，最后使用<code>new</code>创建一个<code>Proxy</code>实例对象，用<code>_renderProxy</code>属性来代理实例对象<code>vm</code>，并且传入<code>handlers</code>。</p>
+<p><code>handlers</code>有两个值，分别是<code>getHandler</code> 和<code>hasHandler</code>。需要通过条件判断来获取，而条件语句中的<code>options.render._withStripped</code>只有在测试环境中才会出现。所以<code>handlers</code>一般都是指<code>hasHandler</code>。</p>
+<p>下面看下<code>hasHandler</code>的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> hasHandler = &#123;</span><br><span class="line">  has(target, key) &#123;</span><br><span class="line">    <span class="keyword">const</span> has = key <span class="keyword">in</span> target</span><br><span class="line">    <span class="keyword">const</span> isAllowed =</span><br><span class="line">      allowedGlobals(key) ||</span><br><span class="line">      (<span class="keyword">typeof</span> key === <span class="string">'string'</span> &amp;&amp;</span><br><span class="line">        key.charAt(<span class="number">0</span>) === <span class="string">'_'</span> &amp;&amp;</span><br><span class="line">        !(key <span class="keyword">in</span> target.$data))</span><br><span class="line">    <span class="keyword">if</span> (!has &amp;&amp; !isAllowed) &#123;</span><br><span class="line">      <span class="keyword">if</span> (key <span class="keyword">in</span> target.$data) warnReservedPrefix(target, key)</span><br><span class="line">      <span class="keyword">else</span> warnNonPresent(target, key)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> has || !isAllowed</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>hasHandler</code>是一个对象，主要拦截了代理对象<code>vm</code>的<code>has</code>相关属性，比如拦截<code>in</code>操作符，还有<code>with</code>函数，先看具体的代码逻辑。</p>
+<p>首先，获取声明常量<code>has</code>存储<code>key in target</code>运行的结果，然后声明变量<code>isAllowed</code>，这个变量是判断属性<code>key</code>是否允许访问。只有<code>key</code>是全局访问 API 时或者是以<code>_</code>开头但不是在<code>data</code>选项中的 Vue 的属性时，<code>isAllowed</code>才为<code>true</code>。</p>
+<p>如果<code>has</code>和<code>isAllowed</code>都不为真，还需要判断<code>key</code>是否是<code>data</code>选项上的属性，如果是的话，会提醒以 <code>_</code> 或 <code>$</code> 开头的属性 <strong>不会</strong> 被 Vue 的实例对象代理，因为使用<code>_</code> 或 <code>$</code> 开头的属性可能会和 Vue 的内置属性或者方法的名称冲突。如果不是的话，会提醒在模板中使用了<code>key</code>值，但是在实例对象中并没有定义这个值。</p>
+<p>最后返回 <code>has || !isAllowed</code>，即只有<code>has</code>为假且<code>isAllowed</code>为真时才会输出<code>false</code>，其他情况都输入<code>true</code>。</p>
+<p>举一个<strong>例子</strong>，假如访问一个没有定义在实例对象上(或原型链上)的属性的属性时（满足 <code>!has</code>为 <code>true</code>）。</p>
+<p>此时如果这个属性还是全局属性时（满足<code>!isAllowed</code>为<code>false</code>），就不会报错，不会执行那两个<code>warn</code>函数，但是最后会输出<code>false</code>，即<code>key in target</code>的值为<code>false</code>，说明属性不在<code>taregt</code>上。</p>
+<p>但是如果这个属性不是全局属性就会报错，即满足了<code>!has &amp;&amp; ！isAllowed</code>的条件，最后输出<code>true</code>，即<code>key in target</code>的值为<code>true</code>，说明属性在<code>taregt</code>上。</p>
+<p>说了那么多，<strong>为什么在非生产环境时需要使用代理</strong>呢？而生产环境就不需要呢？它们有什么区别吗？</p>
+<p>先看下在实例的渲染函数<code>__render</code>有这样一行代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 渲染虚拟 Node， 传入 vm.$createElement 方法</span></span><br><span class="line">vnode = render.call(vm._renderProxy, vm.$createElement)</span><br></pre></td></tr></table></figure>
+
+<p>在渲染时指向了我们的代理<code>_renderProxy</code>，再看下选项中的渲染函数<code>vm.$options.render</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">vm.$options.render = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">// render 函数的 this 指向实例的 _renderProxy</span></span><br><span class="line">  <span class="keyword">with</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> _c(<span class="string">'div'</span>, [_v(_s(a))]) <span class="comment">// 在这里访问 a，相当于访问 vm._renderProxy.a</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面的代码可以发现，显然函数使用 <code>with</code> 语句块指定了内部代码的执行环境为 <code>this</code>，由于 <code>render</code> 函数调用的时候使用 <code>call</code> 指定了其 <code>this</code> 指向为 <code>vm._renderProxy</code>，所以 <code>with</code> 语句块内代码的执行环境就是 <code>vm._renderProxy</code>，所以在 <code>with</code> 语句块内访问<code>a</code>就相当于访问<code>vm._renderProxy</code>的 <code>a</code> 属性，前面我们提到过 <code>with</code> 语句块内访问变量将会被<code>Proxy</code>的<code>has</code>代理所拦截，所以自然就执行了 <code>has</code> 函数内的代码。最终通过<code>warnNonPresent</code>打印警告信息给我们。</p>
+<p>所以使用代理的作用就是<strong>为了在开发阶段给我们一个友好而准确的提示</strong>。</p>
+<h2 id="Initial-Function"><a href="#Initial-Function" class="headerlink" title="Initial Function"></a>Initial Function</h2><p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// expose real self</span></span><br><span class="line">vm._self = vm</span><br><span class="line">initLifecycle(vm) <span class="comment">// ! 初始化生命周期相关属性 存储本身实例到父节点 新增属性 $parent $root $children $refs 等</span></span><br><span class="line">initEvents(vm) <span class="comment">// ! 初始化事件相关属性 更新 listeners</span></span><br><span class="line">initRender(vm) <span class="comment">// ! 初始化渲染相关属性, 创建VNode 另新增属性 $attrs 和 $listeners</span></span><br><span class="line">callHook(vm, <span class="string">'beforeCreate'</span>) <span class="comment">// ! 调用 beforeCreate 钩子函数</span></span><br><span class="line">initInjections(vm) <span class="comment">// ! 初始化 injections 选项，必须在初始化状态之前</span></span><br><span class="line">initState(vm) <span class="comment">// ! 初始化状态 按顺序 props =&gt; methods =&gt; data =&gt; computed  =&gt; watch</span></span><br><span class="line">initProvide(vm) <span class="comment">// ! 初始化 Provide resolve provide after data/props</span></span><br><span class="line">callHook(vm, <span class="string">'created'</span>) <span class="comment">// ! 调用 created 钩子函数</span></span><br></pre></td></tr></table></figure>
+
+<p>把实例对象赋值到<code>_self</code>属性中，这个属性和<code>_renderProxy</code>属性有点相似，都是赋值为实例对象。</p>
+<p>但是它们的用途并不相同，而且<code>_renderProxy</code>的值在支持<code>proxy</code>的宿主环境时是一个代理对象。</p>
+<p>然后调用一系列的初始化函数来初始化实例对象，<strong>注意：这些函数在调用时都需要传入实例对象<code>vm</code></strong>。</p>
+<h3 id="initLifecycle"><a href="#initLifecycle" class="headerlink" title="initLifecycle"></a><code>initLifecycle</code></h3><p>查看<code>initLifecycle</code>函数的代码，这个函数初始化生命周期相关的属性。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">initLifecycle</span>(<span class="params">vm: Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> options = vm.$options</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先是声明变量<code>options</code>存储合并后的选项<code>vm.$options</code>。</p>
+<p>然后是下面这段代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// locate first non-abstract parent</span></span><br><span class="line"><span class="keyword">let</span> parent = options.parent</span><br><span class="line"><span class="keyword">if</span> (parent &amp;&amp; !options.abstract) &#123;</span><br><span class="line">  <span class="comment">// ! 查找第一个非抽象的父组件</span></span><br><span class="line">  <span class="keyword">while</span> (parent.$options.abstract &amp;&amp; parent.$parent) &#123;</span><br><span class="line">    parent = parent.$parent</span><br><span class="line">  &#125;</span><br><span class="line">  parent.$children.push(vm) <span class="comment">// ! 把实例存储到父组件里面</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vm.$parent = parent <span class="comment">// ! 添加父组件属性 $parent</span></span><br><span class="line">vm.$root = parent ? parent.$root : vm <span class="comment">// ! 新增属性 $root</span></span><br></pre></td></tr></table></figure>
+
+<p>声明变量<code>parent</code>存储<code>options</code>的父组件<code>parent</code>。然后使用<code>if</code>语句通过循环查找，往组件树上一层层的寻找父组件<code>parent</code>，如果<code>parent</code>的选项中有<code>abstract</code>属性，说明这是一个抽象组件，不满足要求，继续往上找，直到找到选项中没有<code>abstract</code>属性的父组件为止，然后把当前的实例对象存储到父组件的<code>$children</code>属性中，建立父子关系。</p>
+<p>什么是<strong>抽象组件</strong>呢？抽象组件就是不会被渲染成真实 DOM 的组件，比如<code>keep-alive</code>、<code>translation</code>等内置组件，它们是具有特殊作用的组件，不会被渲染成真实 DOM。</p>
+<p>抽象组件还有一个特点就是<strong>不会出现在父子关系的路径中</strong>。比如组件<code>compA</code>有子组件<code>compB</code>，子组件<code>compB</code>又有子组件<code>compC</code>，但是组件<code>compB</code>是一个抽象组件，那么<code>compC</code>的父组件就不是<code>compB</code>，而是<code>compA</code>。</p>
+<p>这里有一个<strong>问题</strong>：就是<code>options.parent</code>是从哪里来的？我们只知道合并后的选项是<code>vm.$options</code> ，那么选项中的<code>parent</code>属性是从哪里来的呢？我们在之前的组件的初始化过程中并没有设置这个<code>parent</code>属性。其实，这是 Vue 设置的，是 Vue <strong>自动给实例对象添加了父组件</strong><code>parent</code>，具体如何实现自动添加父组件，这里暂时不讲解。</p>
+<p>然后把父组件赋值给实例对象的<code>$parent</code>属性，再新增一个属性<code>$root</code>，如果存在父组件就把父组件的<code>$root</code>赋值给这个属性；如果没有的话，就赋值为实例对象本身。这个属性是用来存储根组件。如果实例对象有父组件就存储父组件的根组件，没有父组件说明这个实例对象就是根组件，保存实例对象本身即可。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">vm.$children = []</span><br><span class="line">vm.$refs = &#123;&#125;</span><br><span class="line"></span><br><span class="line">vm._watcher = <span class="literal">null</span></span><br><span class="line">vm._inactive = <span class="literal">null</span></span><br><span class="line">vm._directInactive = <span class="literal">false</span></span><br><span class="line">vm._isMounted = <span class="literal">false</span></span><br><span class="line">vm._isDestroyed = <span class="literal">false</span></span><br><span class="line">vm._isBeingDestroyed = <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+
+<p>这里初始化一些实例属性的值，其中有我们熟悉的子组件数组<code>$children</code>，还有引用元素或者组件的集合对象<code>$refs</code>。</p>
+<p><strong>注意</strong>，Vue 的实例对象里<strong>以<code>$</code>开头的属性是暴露给用户使用的，而以<code>_</code>开头的属性是 Vue 的私有属性，不会暴露给用户</strong>，这两类属性都属于 Vue 的内置属性，所以用户自定义的属性不能以<code>$</code>或者<code>_</code>开头，否则不会代理到实例对象中，这样为了防止和 Vue 的内置属性名冲突。</p>
+<h3 id="initEvents"><a href="#initEvents" class="headerlink" title="initEvents"></a><code>initEvents</code></h3><p>接下来查看<code>initEvents</code>函数的代码，这个函数初始化事件相关的属性。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">initEvents</span>(<span class="params">vm: Component</span>) </span>&#123;</span><br><span class="line">  vm._events = <span class="built_in">Object</span>.create(<span class="literal">null</span>)</span><br><span class="line">  vm._hasHookEvent = <span class="literal">false</span></span><br><span class="line">  <span class="comment">// init parent attached events</span></span><br><span class="line">  <span class="keyword">const</span> listeners = vm.$options._parentListeners</span><br><span class="line">  <span class="keyword">if</span> (listeners) &#123;</span><br><span class="line">    updateComponentListeners(vm, listeners)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先添加了两个实例属性<code>_events</code>和<code>_hasHookEvent</code>，<code>_events</code>初始值一个没有原型对象的空对象，而<code>_hasHookEvent</code>初始值为<code>false</code>。</p>
+<p>然后是声明变量<code>listeners</code>存储<code>vm.$options._parentListeners</code>，再判断这个<code>listeners</code>是否存在，如果存在，调用<code>updateComponentListeners</code>并传入<code>vm</code>和<code>listeners</code>更新组件的<code>linsteners</code>。</p>
+<p>我们现在还不知道<code>_parentListeners</code>是从哪里来的，这里先不管。</p>
+<h3 id="initRender"><a href="#initRender" class="headerlink" title="initRender"></a><code>initRender</code></h3><p>接下来查看<code>initRender</code> 函数的代码，这个函数初始化渲染相关的属性。</p>
+<p>先看下函数前面的几行代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">initRender</span>(<span class="params">vm: Component</span>) </span>&#123;</span><br><span class="line">  vm._vnode = <span class="literal">null</span> <span class="comment">// the root of the child tree</span></span><br><span class="line">  vm._staticTrees = <span class="literal">null</span> <span class="comment">// v-once cached trees</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先，添加了两个实例属性<code>_vnode</code> 和<code>_staticTrees</code> ，它们的初始值都是<code>null</code>。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> options = vm.$options</span><br><span class="line"><span class="keyword">const</span> parentVnode = (vm.$vnode = options._parentVnode) <span class="comment">// the placeholder node in parent tree</span></span><br><span class="line"><span class="keyword">const</span> renderContext = parentVnode &amp;&amp; parentVnode.context</span><br><span class="line">vm.$slots = resolveSlots(options._renderChildren, renderContext)</span><br><span class="line">vm.$scopedSlots = emptyObject</span><br></pre></td></tr></table></figure>
+
+<p>还是声明变量<code>options</code>存储合并后的选项<code>vm.$options</code>，然后再次为实例对象添加三个实例属性<code>$vnode</code>、``$slots<code>和</code>$scopedSlots<code>。这里暂时先不去管上面代码中</code>options._parentVnode<code>和</code>options._renderChildren`是怎么来的。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vm._c = <span class="function">(<span class="params">a, b, c, d</span>) =&gt;</span> createElement(vm, a, b, c, d, <span class="literal">false</span>) <span class="comment">// ! 编译器渲染模板的渲染方法</span></span><br><span class="line">vm.$createElement = <span class="function">(<span class="params">a, b, c, d</span>) =&gt;</span> createElement(vm, a, b, c, d, <span class="literal">true</span>) <span class="comment">// ! 用户手写代码的渲染方法</span></span><br></pre></td></tr></table></figure>
+
+<p>新增两个实例方法<code>_c</code>和<code>$createElement</code>，这两个方法都调用了<code>createElement</code>函数，而且调用这个函数时传入的参数个数也是相同，唯一不同的是传入的第六个参数<code>alwaysNormalize</code>的值不同，<code>_c</code>传入的是<code>false</code>，<code>$createElement</code>传入的<code>true</code>。这里先说明下<code>_c</code>方法是编译器渲染模板的渲染方法，而<code>$createElement</code>是用户手写代码时的渲染方法。</p>
+<p>比如我们手写<code>render</code>函数的时候，编写下面代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  render(createElement) &#123;</span><br><span class="line">    <span class="keyword">return</span> createElement(<span class="string">'h1'</span>, <span class="string">'hello'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果换成<code>$createElement</code>来写的话，是下面这个样子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  render() &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.$createElement(<span class="string">'h1'</span>, <span class="string">'hello'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续看最后剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> parentData = parentVnode &amp;&amp; parentVnode.data</span><br><span class="line"></span><br><span class="line"><span class="comment">/* istanbul ignore else */</span></span><br><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  defineReactive(</span><br><span class="line">    vm,</span><br><span class="line">    <span class="string">'$attrs'</span>,</span><br><span class="line">    (parentData &amp;&amp; parentData.attrs) || emptyObject,</span><br><span class="line">    () =&gt; &#123;</span><br><span class="line">      !isUpdatingChildComponent &amp;&amp; warn(<span class="string">`$attrs is readonly.`</span>, vm)</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="literal">true</span></span><br><span class="line">  )</span><br><span class="line">  defineReactive(</span><br><span class="line">    vm,</span><br><span class="line">    <span class="string">'$listeners'</span>,</span><br><span class="line">    options._parentListeners || emptyObject,</span><br><span class="line">    () =&gt; &#123;</span><br><span class="line">      !isUpdatingChildComponent &amp;&amp; warn(<span class="string">`$listeners is readonly.`</span>, vm)</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="literal">true</span></span><br><span class="line">  )</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  defineReactive(</span><br><span class="line">    vm,</span><br><span class="line">    <span class="string">'$attrs'</span>,</span><br><span class="line">    (parentData &amp;&amp; parentData.attrs) || emptyObject,</span><br><span class="line">    <span class="literal">null</span>,</span><br><span class="line">    <span class="literal">true</span></span><br><span class="line">  )</span><br><span class="line">  defineReactive(</span><br><span class="line">    vm,</span><br><span class="line">    <span class="string">'$listeners'</span>,</span><br><span class="line">    options._parentListeners || emptyObject,</span><br><span class="line">    <span class="literal">null</span>,</span><br><span class="line">    <span class="literal">true</span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中新增实例对象属性<code>$attrs</code>和<code>$listeners</code>，使用<code>defineReactive</code>函数来定义属性，<code>defineReactive</code>在后面讲响应式系统时会分析，它的作用是使对象的<code>key</code>值变成响应式的属性。</p>
+<p>根据 Node 环境不同，在传入<code>defineReactive</code>函数的第四个参数也不同，这个参数是<code>customSetter</code>，是一个自定义<code>setter</code>函数，是可选的。</p>
+<p>在非生产环境中传入的是下面这个函数</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">;<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  !isUpdatingChildComponent &amp;&amp; warn(<span class="string">`$attrs is readonly.`</span>, vm)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数参数是在非生产环境中传入的，当<code>isUpdatingChildComponent</code>为<code>false</code>时，会提示<code>$attrs</code>属性时可读的。这个函数在你设置<code>$attrs</code>或者<code>$listeners</code>的值的时候会执行。</p>
+<p>先看下<code>isUpdatingChildComponent</code>的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">let</span> isUpdatingChildComponent: boolean = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 更新子组件方法</span></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">updateChildComponent</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  vm: Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  propsData: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  listeners: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  parentVnode: MountedComponentVNode,</span></span></span><br><span class="line"><span class="function"><span class="params">  renderChildren: ?Array&lt;VNode&gt;</span></span></span><br><span class="line"><span class="function"><span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    isUpdatingChildComponent = <span class="literal">true</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// update $attrs and $listeners hash</span></span><br><span class="line">  <span class="comment">// these are also reactive so they may trigger child update if the child</span></span><br><span class="line">  <span class="comment">// used them during render</span></span><br><span class="line">  vm.$attrs = parentVnode.data.attrs || emptyObject</span><br><span class="line">  vm.$listeners = listeners || emptyObject</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    isUpdatingChildComponent = <span class="literal">false</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>isUpdatingChildComponent</code>默认值是<code>false</code>，当调用<code>updateChildComponent</code>函数时，会先把它的值设置为<code>true</code>，然后执行一段代码后，又把它的值设置为<code>false</code>。</p>
+<p>我们注意到中间代码中有对<code>$attrs</code>和<code>$listeners</code>属性进行赋值的操作，即更新这两个属性，因为在这之前已经设置<code>isUpdatingChildComponent</code>的值为<code>false</code>，所以更新属性时不会提示它们是只读属性。</p>
+<h3 id="callHook"><a href="#callHook" class="headerlink" title="callHook"></a><code>callHook</code></h3><p>执行完<code>initRender</code> 函数后，下面执行的是<code>callHook</code>函数，这是执行生命周期钩子的函数。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">callHook(vm, <span class="string">'beforeCreate'</span>) <span class="comment">// ! 调用 beforeCreate 钩子函数</span></span><br></pre></td></tr></table></figure>
+
+<p>这里是执行的<code>beforeCreate</code>生命周期钩子函数。</p>
+<p>先看下<code>callHook</code>函数代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">callHook</span>(<span class="params">vm: Component, hook: string</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// #7573 disable dep collection when invoking lifecycle hooks</span></span><br><span class="line">  pushTarget()</span><br><span class="line">  <span class="keyword">const</span> handlers = vm.$options[hook]</span><br><span class="line">  <span class="keyword">const</span> info = <span class="string">`<span class="subst">$&#123;hook&#125;</span> hook`</span></span><br><span class="line">  <span class="keyword">if</span> (handlers) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, j = handlers.length; i &lt; j; i++) &#123;</span><br><span class="line">      invokeWithErrorHandling(handlers[i], vm, <span class="literal">null</span>, vm, info)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (vm._hasHookEvent) &#123;</span><br><span class="line">    vm.$emit(<span class="string">'hook:'</span> + hook)</span><br><span class="line">  &#125;</span><br><span class="line">  popTarget()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数需要传入两个参数，实例对象<code>vm</code>和生命周期钩子函数的名称<code>hook</code>。</p>
+<p>再看函数体的第一行和最后一行，第一行代码是<code>pushTarget()</code> ，最后一行代码<code>popTarget()</code>，看名字应该是目标入栈和出栈，这里先不管它们的逻辑。</p>
+<p>继续看下面的代码，先从合并后的选项<code>vm.$options</code>中通过钩子名称获取钩子的值<code>handlers</code>。从前面的选项的合并中，我们知道<code>handles</code>的值应该是一个数组，数组里面的元素是都是钩子函数。</p>
+<p>因为不是每个组件都有生命周期钩子函数的，所以需要先判断下是否存在<code>handlers</code>。</p>
+<p>如果存在，则遍历这个钩子函数组成的数组，调用<code>invokeWithErrorHandling</code>函数来执行数组里面的函数。</p>
+<p>看下<code>invokeWithErrorHandling</code>函数的代码，在<code>core/util/error.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">invokeWithErrorHandling</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  handler: Function,</span></span></span><br><span class="line"><span class="function"><span class="params">  context: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  args: null | any[],</span></span></span><br><span class="line"><span class="function"><span class="params">  vm: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  info: string</span></span></span><br><span class="line"><span class="function"><span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> res</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    res = args ? handler.apply(context, args) : handler.call(context)</span><br><span class="line">    <span class="keyword">if</span> (res &amp;&amp; !res._isVue &amp;&amp; isPromise(res) &amp;&amp; !res._handled) &#123;</span><br><span class="line">      res.catch(<span class="function"><span class="params">e</span> =&gt;</span> handleError(e, vm, info + <span class="string">` (Promise/async)`</span>))</span><br><span class="line">      <span class="comment">// issue #9511</span></span><br><span class="line">      <span class="comment">// avoid catch triggering multiple times when nested calls</span></span><br><span class="line">      res._handled = <span class="literal">true</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">    handleError(e, vm, info)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>把钩子函数的执行放到处理错误相关的文件中，主要是为了更好的提示错误。</p>
+<p>首先声明变量<code>res</code>，这也是这个函数的返回值。然后开始就使用了<code>try ... catch</code>语句来执行钩子函数，以及捕获可能出现的错误，如果出现错误调用<code>handleError</code>函数来处理。</p>
+<p>重新定义变量<code>res</code>，用来存储函数调用的值，通过判断是否有参数<code>args</code>，然后在执行<code>handler</code>函数的时候是否传入参数。再判断函数的输出值<code>res</code>是不是一个<code>Promise</code>对象，如果是的话，使用<code>catch</code>来捕获<code>Promsie</code>对象的错误。之后再设置返回值<code>res</code>的属性<code>_handled</code>为<code>ture</code>，表示函数已经被调用过。</p>
+<p>函数最后不管有没有出现错误都会返回<code>res</code>。不过我们在使用生命周期钩子函数时，一般很少用到这个返回值。</p>
+<p>接下来看剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (vm._hasHookEvent) &#123;</span><br><span class="line">  vm.$emit(<span class="string">'hook:'</span> + hook)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>vm._hasHookEvent</code>是在<code>initEvent</code>时定义的属性，初始值是<code>false</code>，它是用来判断是否有<strong>生命周期钩子的事件监听器</strong>。当组件检查到有<strong>生命周期钩子的事件监听器</strong>时，会把它的值设为<code>true</code>。</p>
+<p>到底什么是<strong>生命周期钩子的事件监听器</strong>呢？</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">child</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">hook:beforeCreate</span>=<span class="string">"handleChildBeforeCreate"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">hook:created</span>=<span class="string">"handleChildCreated"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">hook:mounted</span>=<span class="string">"handleChildMounted"</span></span></span><br><span class="line"><span class="tag">/&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>使用<code>@hook:</code> 再加上<code>生命周期的名称</code>来监听组件的生命周期事件。</p>
+<p>当实例对象发现有<strong>生命周期钩子的事件监听器</strong>时，会把<code>_hasHookEvent</code>设置为<code>true</code>，这时就会进入下面的逻辑，实例对象会派发一个名为<code>hook: 生命周期函数名字</code>的事件出去。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vm.$emit(<span class="string">'hook:'</span> + hook)</span><br></pre></td></tr></table></figure>
+
+<p>这里有个问题：实例对象是什么时候设置<code>_hasHookEvent</code>为<code>true</code>的呢？这涉及到 Vue 的事件系统，暂时先不管。</p>
+<h3 id="initState"><a href="#initState" class="headerlink" title="initState"></a><code>initState</code></h3><p>调用完生命周期钩子函数后，接下来是<code>initInjections</code>函数的调用，这个函数是初始化<code>injects</code>选项的函数。这里先不管它，后面和初始化<code>provides</code>的函数一起分析。</p>
+<p>现在看下一个<code>initState</code> 函数的代码，在<code>core/instance/state.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">initState</span>(<span class="params">vm: Component</span>) </span>&#123;</span><br><span class="line">  vm._watchers = []</span><br><span class="line">  <span class="keyword">const</span> opts = vm.$options</span><br><span class="line">  <span class="keyword">if</span> (opts.props) initProps(vm, opts.props)</span><br><span class="line">  <span class="keyword">if</span> (opts.methods) initMethods(vm, opts.methods)</span><br><span class="line">  <span class="keyword">if</span> (opts.data) &#123;</span><br><span class="line">    initData(vm)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    observe((vm._data = &#123;&#125;), <span class="literal">true</span> <span class="comment">/* asRootData */</span>)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (opts.computed) initComputed(vm, opts.computed)</span><br><span class="line">  <span class="keyword">if</span> (opts.watch &amp;&amp; opts.watch !== nativeWatch) &#123;</span><br><span class="line">    initWatch(vm, opts.watch)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是初始化 Vue 的数据相关的函数。首先增加实例属性<code>vm._watchers</code>，初始值为空数组。声明变量<code>opts</code>存储合并后的选项<code>vm.$options</code>。</p>
+<p>然后判断<code>opts</code>中是否有<code>props</code>属性，如果有的话调用<code>initProps</code>函数初始化<code>props</code>选项。再判断<code>opts</code>中是否有<code>methods</code>属性，如果有的话调用<code>initMethods</code>函数初始化<code>methods</code>选项。再在判断<code>opts</code>中是否有<code>data</code>属性，如果有的话调用<code>initData</code>函数初始化<code>data</code>选项；如果没有的话，调用<code>observe</code>监听一个空对象，并传入第二个参数<code>true</code>，表示观测的对象是根组件的<code>data</code>。</p>
+<p>接下来继续判断<code>opts</code>中是否有<code>computed</code>属性，如果有的话调用<code>initComputed</code>函数初始化<code>computed</code>选项。继续判断<code>opts</code>中是否有<code>watch</code>且它不等于 Firefox 浏览器的<code>watch</code>值，如果满足这两个条件的话，调用<code>initWatch</code>函数初始化<code>watch</code>选项。</p>
+<p><strong>小结</strong>，<code>initState</code> 函数统一初始化了<code>props</code>、<code>methods</code>、<code>data</code>、<code>computed</code>和<code>watch</code>这几个数据相关的选项。</p>
+<p><strong>注意这些选项初始化的顺序</strong>。比如<code>props</code>要比<code>data</code>和<code>computed</code>更早的初始化，这样就可以使用<code>props</code>的数据来初始化<code>data</code>或者<code>computed</code>选项的数据，计算属性<code>computed</code>的初始化放在<code>data</code>后面也是因为它的值可以依赖<code>data</code>选项的值。</p>
+<p>一个很重要的<strong>使用场景</strong>，Vue 使用单向流数据，规定子组件不能修改父组件传过的<code>props</code>数据，这样会防止从子组件意外改变父级组件的状态，从而导致你的应用的数据流向难以理解。但是在业务场景中，可能需要改变传过来的<code>props</code>的数据，那我们要怎么办呢？</p>
+<p>我们可以把它转存为<code>data</code>或者<code>computed</code>选项的数据，作为这些数据的初始值，这样就相当于改变了<code>props</code>的值。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">props: [<span class="string">'initialCounter'</span>, <span class="string">'size'</span>],</span><br><span class="line">data() &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    counter: <span class="keyword">this</span>.initialCounter</span><br><span class="line">  &#125;</span><br><span class="line">&#125;,</span><br><span class="line">computed: &#123;</span><br><span class="line">  normalizedSize: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.size.trim().toLowerCase()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190906-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%AE%9E%E4%BE%8B%E5%8C%96/" title="Vue2源码学习笔记之实例化">https://haledeng.com/blog/20190906-Vue2源码学习笔记之实例化/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190902-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E7%AD%96%E7%95%A5/" rel="prev" title="Vue2源码学习笔记之选项合并的策略">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之选项合并的策略
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190910-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E7%9B%91%E5%90%AC%E5%99%A8/" rel="next" title="Vue2源码学习笔记之监听器">
+      Vue2源码学习笔记之监听器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#initProxy"><span class="nav-number">1.</span> <span class="nav-text">initProxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Initial-Function"><span class="nav-number">2.</span> <span class="nav-text">Initial Function</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#initLifecycle"><span class="nav-number">2.1.</span> <span class="nav-text">initLifecycle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#initEvents"><span class="nav-number">2.2.</span> <span class="nav-text">initEvents</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#initRender"><span class="nav-number">2.3.</span> <span class="nav-text">initRender</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#callHook"><span class="nav-number">2.4.</span> <span class="nav-text">callHook</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#initState"><span class="nav-number">2.5.</span> <span class="nav-text">initState</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

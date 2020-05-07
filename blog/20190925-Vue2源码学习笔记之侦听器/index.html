@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Vue 给我们提供了侦听器方法vm.$watch和选项watch，用来观察 Vue 实例变化，然后执行一些操作。 下面看下它们是怎么实现的，其实它们都是基于观察者watcher的封装。 vm.$watch先看Vue.prototype.$watch方法的代码，在core&#x2F;instance&#x2F;state.js文件中。 1234567Vue.prototype.$watch &#x3D; function(  e">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之侦听器">
+<meta property="og:url" content="https://haledeng.com/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="Vue 给我们提供了侦听器方法vm.$watch和选项watch，用来观察 Vue 实例变化，然后执行一些操作。 下面看下它们是怎么实现的，其实它们都是基于观察者watcher的封装。 vm.$watch先看Vue.prototype.$watch方法的代码，在core&#x2F;instance&#x2F;state.js文件中。 1234567Vue.prototype.$watch &#x3D; function(  e">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-25T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:58:16.767Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之侦听器 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之侦听器
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-25 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-25T20:00:00+08:00">2019-09-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>5.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Vue 给我们提供了侦听器方法<code>vm.$watch</code>和选项<code>watch</code>，用来观察 Vue 实例变化，然后执行一些操作。</p>
+<p>下面看下它们是怎么实现的，其实它们都是基于观察者<code>watcher</code>的封装。</p>
+<h2 id="vm-watch"><a href="#vm-watch" class="headerlink" title="vm.$watch"></a><code>vm.$watch</code></h2><p>先看<code>Vue.prototype.$watch</code>方法的代码，在<code>core/instance/state.js</code>文件中。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Vue.prototype.$watch = <span class="function"><span class="keyword">function</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  expOrFn: string | Function,</span></span></span><br><span class="line"><span class="function"><span class="params">  cb: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  options?: Object</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Function</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先看下<code>$watch</code>方法的参数，有三个参数，分别是<code>expOrFn</code>、<code>cb</code>和<code>options</code>，我们发现这三个参数对应着<code>Watcher</code>构造函数的第二个到第四个参数。</p>
+<a id="more"></a>
+
+<p>继续看下面的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> vm: Component = <span class="keyword">this</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ! cb 是对象，调用 createWatcher 方法</span></span><br><span class="line"><span class="keyword">if</span> (isPlainObject(cb)) &#123;</span><br><span class="line">  <span class="keyword">return</span> createWatcher(vm, expOrFn, cb, options)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>vm</code>存储当前的实例对象，即<code>this</code>。然后判断<code>cb</code>是不是一个普通对象，如果是的话，调用<code>createWatcher</code>函数，传入<code>vm</code>以及<code>$watch</code>原来的三个参数。</p>
+<h3 id="createWatcher"><a href="#createWatcher" class="headerlink" title="createWatcher"></a><code>createWatcher</code></h3><p>先看下<code>createWatcher</code>函数的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 创建 watcher 的工厂函数</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createWatcher</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  vm: Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  expOrFn: string | Function,</span></span></span><br><span class="line"><span class="function"><span class="params">  handler: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  options?: Object</span></span></span><br><span class="line"><span class="function"><span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">// ! 传入的 handler 是对象时</span></span><br><span class="line">  <span class="keyword">if</span> (isPlainObject(handler)) &#123;</span><br><span class="line">    options = handler</span><br><span class="line">    handler = handler.handler <span class="comment">// ! 获取对象里的 handler 方法作为 cb</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ! 传入的 handler 是字符串时  =&gt; watch: &#123; name: 'cbName' &#125;</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> handler === <span class="string">'string'</span>) &#123;</span><br><span class="line">    handler = vm[handler] <span class="comment">// ! 获取相同名字的函数作为 cb</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> vm.$watch(expOrFn, handler, options) <span class="comment">// ! 最后调用实例的 $watch 方法</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数主要处理在<code>$watch</code>方法中传入的<code>cb</code>参数不是函数的情况，它的第三个参数<code>handler</code>对应<code>$watch</code>的第三个参数<code>cb</code>。</p>
+<p>这里再次判断<code>handler</code>是不是一个普通对象，如果是的话，函数的第四个参数<code>options</code>缓存第三个参数<code>handler</code>的值，而第三个参数<code>handler</code>的值为它的<code>handler</code>属性，即回调函数。</p>
+<p>然后判断<code>handler</code>是不是字符串，如果是的话，<code>handler</code>的值为实例对象的<code>handler</code>属性，即去实例对象获取名为<code>handler</code>的方法作为回调函数。</p>
+<p>最后再次调用<code>vm.$watch</code>方法，并把<code>handler</code>作为函数的第二个参数即回调函数<code>cb</code>传入。</p>
+<p><strong>小结</strong>，<code>createWatcher</code>函数就是通过不是函数类型的<code>cb</code>得到函数类型的<code>handler</code>，然后再次调用<code>vm.$watch</code>方法。经过这个方法处理后，<code>vm.$watch</code>方法的第三个参数<code>cb</code>就一定是函数。</p>
+<p>然后又回到<code>wm.$watch</code>方法中，继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">options = options || &#123;&#125;</span><br><span class="line">options.user = <span class="literal">true</span> <span class="comment">// ! 设置 user 为 true，说明是用户自定义的观察者</span></span><br><span class="line"><span class="keyword">const</span> watcher = <span class="keyword">new</span> Watcher(vm, expOrFn, cb, options) <span class="comment">// ! 创建观察者实例，并传入设置的参数</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 如果设置了 immediate</span></span><br><span class="line"><span class="keyword">if</span> (options.immediate) &#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    cb.call(vm, watcher.value) <span class="comment">// ! 先立即执行一次回调函数</span></span><br><span class="line">  &#125; <span class="keyword">catch</span> (error) &#123;</span><br><span class="line">    handleError(</span><br><span class="line">      error,</span><br><span class="line">      vm,</span><br><span class="line">      <span class="string">`callback for immediate watcher "<span class="subst">$&#123;watcher.expression&#125;</span>"`</span></span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">unwatchFn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  watcher.teardown() <span class="comment">// ! 移除 watcher</span></span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重新定义<code>options</code>为传入的<code>options</code>参数或者是一个空对象（没传入参数）。</p>
+<p>设置<code>options.user</code>属性为<code>true</code>，说明下面创建的观察者对象是用户定义的观察者，然后通过<code>new</code>创建一个观察者实例对象，把当前的组件实例<code>vm</code>和<code>$mount</code>方法的三个参数依次传入。</p>
+<p>判断<code>options</code>选项中<code>immediate</code>属性中是否为真，如果是的话，立即执行一次回调函数<code>cb</code>，使用<code>call</code>执行，函数指向当前的实例对象，并传入参数<code>watcher.value</code>，即观察者的新值。</p>
+<p><code>$watch</code>方法最后返回一个函数，这个函数是用来取消观察，删除观察者的。函数调用观察者的<code>teardown</code>方法。</p>
+<p>看下<code>teardown</code>方法的代码，在<code>core/observer/watcher.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">teardown() &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.active) &#123;</span><br><span class="line">    <span class="comment">// remove self from vm's watcher list</span></span><br><span class="line">    <span class="comment">// this is a somewhat expensive operation so we skip it</span></span><br><span class="line">    <span class="comment">// if the vm is being destroyed.</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">this</span>.vm._isBeingDestroyed) &#123;</span><br><span class="line">      remove(<span class="keyword">this</span>.vm._watchers, <span class="keyword">this</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">let</span> i = <span class="keyword">this</span>.deps.length</span><br><span class="line">    <span class="keyword">while</span> (i--) &#123;</span><br><span class="line">      <span class="keyword">this</span>.deps[i].removeSub(<span class="keyword">this</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.active = <span class="literal">false</span> <span class="comment">// ! 设置观察者实例是非激活状态</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>active</code>是否为真，即判断观察者是否是激活状态，如果是的话，再判断观察者所属实例对象是否已被销毁，如果没有销毁的话，把这个观察者从实例对象中的<code>_watchers</code>属性中删除，即销毁它。</p>
+<p>然后通过递减观察者<code>deps</code>的长度的方式遍历<code>deps</code>，在<code>deps</code>里面存在观察者的<code>dep</code>里删除观察者，最后把观察者的<code>actice</code>属性设为<code>false</code>，表示观察者是非激活状态，这样观察者的回调函数就不会执行了。</p>
+<p>示例对象的<code>$watch</code>方法示例代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cb 是函数时</span></span><br><span class="line">vm.$watch(</span><br><span class="line">  <span class="string">'name'</span>,</span><br><span class="line">  () =&gt; &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'change'</span>)</span><br><span class="line">  &#125;,</span><br><span class="line">  &#123; <span class="attr">immediate</span>: <span class="literal">true</span> &#125;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// cb 是对象时</span></span><br><span class="line">vm.$watch(<span class="string">'name'</span>, &#123;</span><br><span class="line">  handler: <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'change'</span>)</span><br><span class="line">  &#125;,</span><br><span class="line">  immediate: <span class="literal">true</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="watch"><a href="#watch" class="headerlink" title="watch"></a><code>watch</code></h2><p>我们可以使用<code>vm.$watch</code>观察 Vue 实例变化，也可以使用<code>watch</code>选项做相同的事情。<code>watch</code>选项是一个对象，对象的键是需要观察的数据，值是对应的回调函数或者处理器对象，也可以是已经声明的方法的名称。</p>
+<p>在 Vue 的实例对象初始化时，通过遍历<code>watch</code>选项中，然后创建观察者。</p>
+<p>查看<code>initWatch</code>函数的代码，在<code>core/instance/state.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 初始化 watch 选项</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">initWatch</span>(<span class="params">vm: Component, watch: Object</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// ! 遍历 watch</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> watch) &#123;</span><br><span class="line">    <span class="keyword">const</span> handler = watch[key] <span class="comment">// ! 获取 handler</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// ! 如果 handler 是数组（多个观察者），遍历数组后分别创建 Watcher 实例</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(handler)) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; handler.length; i++) &#123;</span><br><span class="line">        createWatcher(vm, key, handler[i])</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      createWatcher(vm, key, handler)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>遍历<code>watch</code>选项，通过<code>key</code>获取到它的值<code>handler</code>。</p>
+<p>然后判断<code>handler</code>是不是数组，如果是数组的话，再遍历一次，在每次循环的过程中，调用<code>createWatcher</code>函数创建观察者；如果不是数组的话，直接调用<code>createWatcher</code>函数创建观察者。</p>
+<p>通过<code>createWatcher</code>函数处理各种类型的<code>handler</code>，包括函数、对象、字符串，最后创建观察者。</p>
+<p>组件中<code>watch</code>选项的示例代码，这里使用官方文档的例子。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> vm = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">  data: &#123;</span><br><span class="line">    a: <span class="number">1</span>,</span><br><span class="line">    b: <span class="number">2</span>,</span><br><span class="line">    c: <span class="number">3</span>,</span><br><span class="line">    d: <span class="number">4</span>,</span><br><span class="line">    e: &#123;</span><br><span class="line">      f: &#123;</span><br><span class="line">        g: <span class="number">5</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  watch: &#123;</span><br><span class="line">    a: <span class="function"><span class="keyword">function</span>(<span class="params">val, oldVal</span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'new: %s, old: %s'</span>, val, oldVal)</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="comment">// 方法名</span></span><br><span class="line">    b: <span class="string">'someMethod'</span>,</span><br><span class="line">    <span class="comment">// 该回调会在任何被侦听的对象的 property 改变时被调用，不论其被嵌套多深</span></span><br><span class="line">    c: &#123;</span><br><span class="line">      handler: <span class="function"><span class="keyword">function</span>(<span class="params">val, oldVal</span>) </span>&#123;</span><br><span class="line">        <span class="comment">/* ... */</span></span><br><span class="line">      &#125;,</span><br><span class="line">      deep: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="comment">// 该回调将会在侦听开始之后被立即调用</span></span><br><span class="line">    d: &#123;</span><br><span class="line">      handler: <span class="string">'someMethod'</span>,</span><br><span class="line">      immediate: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="comment">// 多个 watcher</span></span><br><span class="line">    e: [</span><br><span class="line">      <span class="string">'handle1'</span>,</span><br><span class="line">      <span class="function"><span class="keyword">function</span> <span class="title">handle2</span>(<span class="params">val, oldVal</span>) </span>&#123;</span><br><span class="line">        <span class="comment">/* ... */</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        handler: <span class="function"><span class="keyword">function</span> <span class="title">handle3</span>(<span class="params">val, oldVal</span>) </span>&#123;</span><br><span class="line">          <span class="comment">/* ... */</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* ... */</span></span><br><span class="line">      &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="comment">// watch vm.e.f's value: &#123;g: 5&#125;</span></span><br><span class="line">    <span class="string">'e.f'</span>: <span class="function"><span class="keyword">function</span>(<span class="params">val, oldVal</span>) </span>&#123;</span><br><span class="line">      <span class="comment">/* ... */</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br><span class="line">vm.a = <span class="number">2</span> <span class="comment">// =&gt; new: 2, old: 1</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="深度监听"><a href="#深度监听" class="headerlink" title="深度监听"></a>深度监听</h2><p>在观察者的<code>get</code>方法中，如果<code>this.deep</code>的值为<code>true</code>会进行深度监听，深度监听的目标是对象或者数组。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">get</span>() &#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125; <span class="keyword">catch</span> (e) &#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="comment">// ! 如果是深度观察 =&gt; 用于 watch 选项</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.deep) &#123;</span><br><span class="line">      traverse(value) <span class="comment">// ! 递归去访问 value，触发它所有子项的 getter</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>traverse</code>函数去递归访问<code>value</code>的值，触发它所有子项的<code>getter</code>。</p>
+<p>看下<code>traverse</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> seenObjects = <span class="keyword">new</span> <span class="built_in">Set</span>() <span class="comment">// ! 存储 id 值的集合</span></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">traverse</span>(<span class="params">val: any</span>) </span>&#123;</span><br><span class="line">  _traverse(val, seenObjects)</span><br><span class="line">  seenObjects.clear()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用<code>_traverse</code>方法，把<code>val</code>和<code>seenObjects</code>集合传入，最后调用<code>seenObjects</code>对象的<code>clear</code>方法清空<code>seenObjects</code>集合的元素。</p>
+<p>再看下<code>_traverse</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">_traverse</span>(<span class="params">val: any, seen: SimpleSet</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> i, keys</span><br><span class="line">  <span class="keyword">const</span> isA = <span class="built_in">Array</span>.isArray(val)</span><br><span class="line">  <span class="keyword">if</span> (</span><br><span class="line">    (!isA &amp;&amp; !isObject(val)) ||</span><br><span class="line">    <span class="built_in">Object</span>.isFrozen(val) ||</span><br><span class="line">    val <span class="keyword">instanceof</span> VNode</span><br><span class="line">  ) &#123;</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先声明变量<code>i</code>和<code>keys</code>；再声明常量<code>isA</code>，<code>isA</code>是用来判断传入的参数<code>val</code>是否是数组。</p>
+<p>判断<code>val</code>的值的类型，如果<code>val</code>是非数组非对象类型，或者是不可扩展的，或者是一个<code>VNode</code>，直接返回。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (val.__ob__) &#123;</span><br><span class="line">  <span class="keyword">const</span> depId = val.__ob__.dep.id</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! 已经遍历的对象，不会再遍历，避免循环引用</span></span><br><span class="line">  <span class="keyword">if</span> (seen.has(depId)) &#123;</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">  &#125;</span><br><span class="line">  seen.add(depId)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>val</code>是否存在<code>__ob__</code>属性，即它是一个响应式对象，如果是的话，声明常量<code>depId</code>存储从<code>val.__ob__</code>属性获取到的<code>dep</code>的<code>id</code>，这个<code>id</code>是<code>dep</code>的唯一标识。</p>
+<p>判断集合<code>seen</code>中是否存在<code>depId</code>，如果存在，直接返回，这说明<code>dep</code>已经收集过依赖，不需要再重复收集。</p>
+<p>如果<code>seen</code>中不存在<code>depId</code>，把<code>depId</code>添加到集合<code>seen</code>中。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 数组</span></span><br><span class="line"><span class="keyword">if</span> (isA) &#123;</span><br><span class="line">  i = val.length</span><br><span class="line">  <span class="keyword">while</span> (i--) _traverse(val[i], seen)</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ! 对象</span></span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  keys = <span class="built_in">Object</span>.keys(val)</span><br><span class="line">  i = keys.length</span><br><span class="line">  <span class="keyword">while</span> (i--) _traverse(val[keys[i]], seen)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>深度观测的对象只能是对象或者数组，不管是哪种类型都是遍历它，然后访问它的每一个子项，触发子项的<code>getter</code>，收集依赖。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/" title="Vue2源码学习笔记之侦听器">https://haledeng.com/blog/20190925-Vue2源码学习笔记之侦听器/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190923-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85%E7%9A%84%E6%89%A7%E8%A1%8C/" rel="prev" title="Vue2源码学习笔记之观察者的执行">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之观察者的执行
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/" rel="next" title="Vue2源码学习笔记之计算属性">
+      Vue2源码学习笔记之计算属性 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#vm-watch"><span class="nav-number">1.</span> <span class="nav-text">vm.$watch</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#createWatcher"><span class="nav-number">1.1.</span> <span class="nav-text">createWatcher</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#watch"><span class="nav-number">2.</span> <span class="nav-text">watch</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#深度监听"><span class="nav-number">3.</span> <span class="nav-text">深度监听</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

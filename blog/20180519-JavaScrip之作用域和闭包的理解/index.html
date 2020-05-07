@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="声明提升JavaScript 使用变量的时候必须要声明，一般在使用前声明，也可以在使用后声明。 123456789101112131415console.log(a) &#x2F;&#x2F; undefinedvar a &#x3D; 1var b &#x3D; 2console.log(b) &#x2F;&#x2F; 2f1() &#x2F;&#x2F; 10;&#x2F;&#x2F; 函数声明function f1() &amp;#123;  console.log(10)&amp;#125;f2() &#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScript之作用域和闭包的理解">
+<meta property="og:url" content="https://haledeng.com/blog/20180519-JavaScrip%E4%B9%8B%E4%BD%9C%E7%94%A8%E5%9F%9F%E5%92%8C%E9%97%AD%E5%8C%85%E7%9A%84%E7%90%86%E8%A7%A3/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="声明提升JavaScript 使用变量的时候必须要声明，一般在使用前声明，也可以在使用后声明。 123456789101112131415console.log(a) &#x2F;&#x2F; undefinedvar a &#x3D; 1var b &#x3D; 2console.log(b) &#x2F;&#x2F; 2f1() &#x2F;&#x2F; 10;&#x2F;&#x2F; 函数声明function f1() &amp;#123;  console.log(10)&amp;#125;f2() &#x2F;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-19T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:52:13.187Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="JavaScript">
+<meta property="article:tag" content="作用域">
+<meta property="article:tag" content="闭包">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20180519-JavaScrip%E4%B9%8B%E4%BD%9C%E7%94%A8%E5%9F%9F%E5%92%8C%E9%97%AD%E5%8C%85%E7%9A%84%E7%90%86%E8%A7%A3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>JavaScript之作用域和闭包的理解 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20180519-JavaScrip%E4%B9%8B%E4%BD%9C%E7%94%A8%E5%9F%9F%E5%92%8C%E9%97%AD%E5%8C%85%E7%9A%84%E7%90%86%E8%A7%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JavaScript之作用域和闭包的理解
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-05-19 20:00:00" itemprop="dateCreated datePublished" datetime="2018-05-19T20:00:00+08:00">2018-05-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JavaScript/" itemprop="url" rel="index"><span itemprop="name">JavaScript</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>3.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="声明提升"><a href="#声明提升" class="headerlink" title="声明提升"></a>声明提升</h2><p>JavaScript 使用变量的时候必须要声明，一般在使用前声明，也可以在使用后声明。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">console</span>.log(a) <span class="comment">// undefined</span></span><br><span class="line"><span class="keyword">var</span> a = <span class="number">1</span></span><br><span class="line"><span class="keyword">var</span> b = <span class="number">2</span></span><br><span class="line"><span class="built_in">console</span>.log(b) <span class="comment">// 2</span></span><br><span class="line"></span><br><span class="line">f1() <span class="comment">// 10;</span></span><br><span class="line"><span class="comment">// 函数声明</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">f1</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">10</span>)</span><br><span class="line">&#125;</span><br><span class="line">f2() <span class="comment">// 报错</span></span><br><span class="line"><span class="comment">// 函数表达式</span></span><br><span class="line"><span class="keyword">var</span> f2 = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="number">20</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>JavaScript 程序运行的时候，会自动把变量的声明提升到最前面去，所有变量的声明可以在使用后声明；但是不会把赋值提升上去，比如使用后声明的<code>a=1</code>，在使用时不会获取 <code>a</code> 的值是 <code>1</code>，而是<code>undefined</code>，这样没什么意义。建议使用变量还是提前声明比较好。</p>
+<a id="more"></a>
+
+<p>函数的声明也会提升到最前面，但是函数表达式不会提升，所以后面的 f2 函数调用报错。函数使用后声明有利也有弊，比如在复杂的使用场景中，可以使用函数后再声明，这样也不会报错，但是也可能会忘记声明函数。函数声明和函数表达式有时候是等价的，有时候只能使用表达式，看具体情况使用。</p>
+<h2 id="作用域"><a href="#作用域" class="headerlink" title="作用域"></a>作用域</h2><p>JavaScript 的作用域可以分为全局作用域和局部作用域（函数作用域），在全局作用域的变量就是全局变量，而在函数作用域的变量就是局部变量。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="number">1</span> <span class="comment">// 全局变量</span></span><br><span class="line"><span class="keyword">var</span> b = <span class="number">2</span> <span class="comment">// 全局变量</span></span><br><span class="line"><span class="built_in">console</span>.log(a) <span class="comment">// 1</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">f</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> b = <span class="number">20</span> <span class="comment">// 局部变量</span></span><br><span class="line">  <span class="keyword">var</span> c = <span class="number">30</span> <span class="comment">// 局部变量</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">console</span>.log(a, b) <span class="comment">// 1 20</span></span><br><span class="line">  <span class="built_in">console</span>.log(c) <span class="comment">// 30</span></span><br><span class="line">&#125;</span><br><span class="line">f()</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(b) <span class="comment">// 还是2</span></span><br><span class="line"><span class="built_in">console</span>.log(c) <span class="comment">// 报错</span></span><br></pre></td></tr></table></figure>
+
+<p>全局变量可以被函数所引用，但是局部变量只能在函数内部使用，无法在全局中使用。因为全局变量所在的全局作用域，可以在全局任何地方调用；而局部变量所在的局部作用域，只能在局部作用域中使用。</p>
+<p>什么是作用域？ <strong>作用域为可访问变量，对象，函数的集合</strong>。</p>
+<p>全局变量在局部作用域中重新被赋值后，就变成了局部变量，所赋的值只在所在的局部作用域中使用，在全局作用域中是无效的。在不同的局部作用域内，变量的值可能不一样。</p>
+<h2 id="执行上下文"><a href="#执行上下文" class="headerlink" title="执行上下文"></a>执行上下文</h2><p>在函数中我们经常用的<code>this</code>，在不同的地方<code>this</code>的值也是不一样的，需要根据函数的执行上下文来决定。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Foo</span>(<span class="params">name</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="keyword">this</span>) <span class="comment">// &#123;name: 'hale'&#125;</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">var</span> f = <span class="keyword">new</span> Foo(<span class="string">'hale'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> obj = &#123;</span><br><span class="line">  name: <span class="string">'hale'</span>,</span><br><span class="line">  sayName: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="keyword">this</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">obj.sayName() <span class="comment">// &#123;name:'hale', sayName:f&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="keyword">this</span>)</span><br><span class="line">&#125;</span><br><span class="line">fn() <span class="comment">// window</span></span><br></pre></td></tr></table></figure>
+
+<p><code>this</code>的指向一般是下面的三种情况</p>
+<ul>
+<li><p>对于构造函数，<code>this</code> 则指向新创建的对象。</p>
+</li>
+<li><p>对于对象，<code>this</code> 指向调向该对象。</p>
+</li>
+<li><p>对于普通函数，<code>this</code> 始终指向全局对象 <code>window</code> （在 nodejs 中是<code>global</code>）。</p>
+</li>
+</ul>
+<h2 id="作用域链"><a href="#作用域链" class="headerlink" title="作用域链"></a>作用域链</h2><p>作用域之间是怎么相关联的呢？是通过作用域链来联系的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="number">1</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">f1</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> b = <span class="number">2</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">f2</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> c = <span class="number">3</span></span><br><span class="line">    <span class="built_in">console</span>.log(a)</span><br><span class="line">    <span class="built_in">console</span>.log(b)</span><br><span class="line">    <span class="built_in">console</span>.log(c)</span><br><span class="line">  &#125;</span><br><span class="line">  f2()</span><br><span class="line">&#125;</span><br><span class="line">f1() <span class="comment">// 1 2 3</span></span><br></pre></td></tr></table></figure>
+
+<p>作用域链的运行过程：</p>
+<ul>
+<li><p>调用 f1 函数后，会运行其中的 f2 函数；</p>
+</li>
+<li><p>需要打印 a，但是 a 不在 f2 函数作用域中，执行程序会往上一级作用域-f1 函数作用域中，也就是创建了 f2 作用域的作用域中去寻找。但是发现也不在 f1 函数作用域中，继续往上一级的作用域-全局作用域中，a 在全局作用域中找到了，打印 a。</p>
+</li>
+<li><p>需要打印 b，但是 b 不在 f2 函数作用域中，执行程序会往上一级作用域中找，即在 f1 函数作用域中寻找，b 在 f1 函数作用域中找到了，打印 b。</p>
+</li>
+<li><p>需要打印 c，c 就在 f2 函数作用域中，一下就找到了，打印 c。</p>
+</li>
+</ul>
+<p>在 f2 函数作用域中，a、b 是自由变量；在 f1 函数作用域中，a 是自由变量。</p>
+<p>打印 a 的过程中，从 f2 作用域 -&gt; f1 作用域 -&gt; 全局作用域中，一级一级往上寻找，就形成了一条“作用域链”。</p>
+<h2 id="闭包（closure）"><a href="#闭包（closure）" class="headerlink" title="闭包（closure）"></a>闭包（closure）</h2><p>前面学习了作用域和作用链，知道了局部作用域可以访问全局作用域的变量，但是反过来就不行，在全局作用域中无法访问局部变量。其实，可以通过闭包来访问。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> a = <span class="number">1</span></span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(a)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> f = fn()</span><br><span class="line">f() <span class="comment">// 1</span></span><br></pre></td></tr></table></figure>
+
+<p>从上面我们已经知道了局部作用域的变量是只有在作用域内部使用，外面是无法使用的。但是上面的代码显示在全局作用域中，还是可以访问到局部作用域的变量的。<br>变量<code>a</code>是函数 fn 内部的变量，它的值是 1 ；而变量<code>f</code>是一个全局变量，它被赋予了<code>fn</code>函数调用的值，即 fn 里面的匿名函数。然后再调用<code>f</code>，输出了<code>a</code>的值 1，这相当于我们访问到了局部变量<code>a</code>。</p>
+<p>其实 fn 函数就是一个最简单的<strong>闭包</strong>。</p>
+<p>这个例子比较简单，我们再看下面的例子：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> a = <span class="number">0</span></span><br><span class="line">  a++</span><br><span class="line">  <span class="built_in">console</span>.log(a)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">fn() <span class="comment">// 1</span></span><br><span class="line">fn() <span class="comment">// 1</span></span><br><span class="line">fn() <span class="comment">// 1</span></span><br></pre></td></tr></table></figure>
+
+<p>我们发现调用函数 fn 3 次后，输出的值都是 1，那是因为 <code>a</code> 是局部变量，根据 js 的垃圾回收机制，函数执行之后会把局部变量的值销毁掉。如果变量 <code>a</code> 拿到外面，变成全局变量的话，<code>a</code>的值会一直存在。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="number">0</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  a++</span><br><span class="line">  <span class="built_in">console</span>.log(a)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">fn() <span class="comment">// 1</span></span><br><span class="line">fn() <span class="comment">// 2</span></span><br><span class="line">fn() <span class="comment">// 3</span></span><br></pre></td></tr></table></figure>
+
+<p>把 <code>a</code> 变成全局变量后，因为全局变量是一直存在，所以调用函数 <code>fn</code> 后，输出的值是累加的，也就是变量<code>a</code> 的值在累加。</p>
+<p>那有没有一种方法，使得 <code>a</code> 是局部变量，但是 <code>a</code> 可以和全局变量一样，一直存在着呢？而不会再函数调用后就销毁。答案是肯定的，使用闭包。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> a = <span class="number">0</span></span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    a++</span><br><span class="line">    <span class="built_in">console</span>.log(a)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> f = fn()</span><br><span class="line"></span><br><span class="line">f() <span class="comment">// 1</span></span><br><span class="line">f() <span class="comment">// 2</span></span><br><span class="line">f() <span class="comment">// 3</span></span><br></pre></td></tr></table></figure>
+
+<p>使用闭包后，连续调用函数<code>f</code>后，输出的值是累加的，说明局部变量<code>a</code>没有被销毁，而是一直存在着，它的值在累加。当执行<code>var f = fn()</code>后，f 是可以访问到 fn()被调用时产生的环境的，而局部变量<code>a</code>一直存在这个环境里。既然局部变量所在的环境可以被外界访问到，那么这个局部变量就不会被垃圾回收机制回收，也就是不会被销毁了，它相当于是一个全局变量了。</p>
+<p>从上面我们可以看出闭包有几个重要特征：</p>
+<ol>
+<li><p>返回函数</p>
+</li>
+<li><p>可以访问到局部变量</p>
+</li>
+<li><p>局部变量一直存在着</p>
+</li>
+</ol>
+<p>什么是闭包(closure)呢？</p>
+<p>貌似现在还没有一个明确的定义。个人理解是：闭包指可以读取其他函数作用域变量的函数，并且一直保存里面局部变量的值。</p>
+<h2 id="闭包实例"><a href="#闭包实例" class="headerlink" title="闭包实例"></a>闭包实例</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 查询是否是新用户</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">isNew</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> list = <span class="keyword">new</span> <span class="built_in">Array</span>()</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span>(<span class="params">id</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (list.indexOf(id) &gt; <span class="number">-1</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      list.push(id)</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> isNewId = isNew()</span><br><span class="line"><span class="built_in">console</span>.log(isNewId(<span class="number">10</span>)) <span class="comment">// true</span></span><br><span class="line"><span class="built_in">console</span>.log(isNewId(<span class="number">10</span>)) <span class="comment">// false</span></span><br><span class="line"><span class="built_in">console</span>.log(isNewId(<span class="number">20</span>)) <span class="comment">// true</span></span><br><span class="line"><span class="built_in">console</span>.log(isNewId(<span class="number">20</span>)) <span class="comment">// false</span></span><br></pre></td></tr></table></figure>
+
+<p>上面代码中，全局变量<code>isNewId</code>引用了<code>isNew()</code>，局部变量<code>list</code>没有被回收，<code>list</code>里面的值保存在内存里。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>闭包有两个非常重要的特性：</p>
+<ul>
+<li><p>访问其他的函数内部的变量值。</p>
+</li>
+<li><p>闭包里面的变量会始终保存着。</p>
+</li>
+</ul>
+<p>闭包的两个特性有非常好的应用。比如：封装一些不需要暴露的全局变量，还可以把局部变量的值保存起来长期使用等等。但是，也不能滥用闭包，因为闭包的值会保存在内存中，会消耗内存，造成网页性能问题。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20180519-JavaScrip%E4%B9%8B%E4%BD%9C%E7%94%A8%E5%9F%9F%E5%92%8C%E9%97%AD%E5%8C%85%E7%9A%84%E7%90%86%E8%A7%A3/" title="JavaScript之作用域和闭包的理解">https://haledeng.com/blog/20180519-JavaScrip之作用域和闭包的理解/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JavaScript/" rel="tag"># JavaScript</a>
+              <a href="/tags/%E4%BD%9C%E7%94%A8%E5%9F%9F/" rel="tag"># 作用域</a>
+              <a href="/tags/%E9%97%AD%E5%8C%85/" rel="tag"># 闭包</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20180511-JavaScript%E4%B9%8B%E5%8E%9F%E5%9E%8B%E7%9A%84%E7%90%86%E8%A7%A3/" rel="prev" title="JavaScript之原型的理解">
+      <i class="fa fa-chevron-left"></i> JavaScript之原型的理解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20180525-JavaScript%E4%B9%8B%E5%8D%95%E7%BA%BF%E7%A8%8B%E5%92%8C%E5%BC%82%E6%AD%A5%E7%9A%84%E7%90%86%E8%A7%A3/" rel="next" title="JavaScript之单线程和异步的理解">
+      JavaScript之单线程和异步的理解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#声明提升"><span class="nav-number">1.</span> <span class="nav-text">声明提升</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#作用域"><span class="nav-number">2.</span> <span class="nav-text">作用域</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行上下文"><span class="nav-number">3.</span> <span class="nav-text">执行上下文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#作用域链"><span class="nav-number">4.</span> <span class="nav-text">作用域链</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#闭包（closure）"><span class="nav-number">5.</span> <span class="nav-text">闭包（closure）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#闭包实例"><span class="nav-number">6.</span> <span class="nav-text">闭包实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

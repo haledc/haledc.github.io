@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Je pense, donc je suis">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hale&#39;s Notes">
+<meta property="og:url" content="https://haledeng.com/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="Je pense, donc je suis">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="blog front-end fe node.js full-stack">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20191025-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84Map%E8%AF%AD%E6%B3%95%E7%B3%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20191025-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84Map%E8%AF%AD%E6%B3%95%E7%B3%96/" class="post-title-link" itemprop="url">Vuex3源码学习笔记之Vuex的Map语法糖</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-25 20:00:00" itemprop="dateCreated datePublished" datetime="2019-10-25T20:00:00+08:00">2019-10-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vuex/" itemprop="url" rel="index"><span itemprop="name">Vuex</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>7.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在 Vuex 安装在 Vue 的过程中，会把用户定义的<code>store</code>实例赋值给 Vue 实例对象的<code>$store</code>中，所以我们在 Vue 组件中的任意地方使用<code>this.$store</code>调用<code>store</code>的值。但是这样使用可读性并不是很好，这样不好查找在组件的哪些地方，调用了哪些<code>store</code>上的属性和方法。</p>
+<p>一般我们都会使用<code>MapXxx</code>语法糖来引入<code>store</code>的属性，这样很好的查找在哪里使用了<code>store</code>的哪些数据，可读性也会更强，也更方便管理。</p>
+<h2 id="mapState"><a href="#mapState" class="headerlink" title="mapState"></a><code>mapState</code></h2><p>先看下<code>mapState</code>函数的代码，在<code>helpers.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> mapState = normalizeNamespace(<span class="function">(<span class="params">namespace, states</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  normalizeMap(states).forEach(<span class="function">(<span class="params">&#123; key, val &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>在分析<code>mapState</code>代码时，需要先搞清除<code>normalizeNamespace</code>和<code>normalizeMap</code>这个两个函数的作用，不然会一脸懵逼。</p>
+<h3 id="normalizeNamespace规范化参数"><a href="#normalizeNamespace规范化参数" class="headerlink" title="normalizeNamespace规范化参数"></a><code>normalizeNamespace</code>规范化参数</h3><p>先看<code>normalizeNamespace</code>函数的代码，这个函数的作用是规范用户传入的参数。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeNamespace</span>(<span class="params">fn</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function">(<span class="params">namespace, map</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// ! 命名空间不为字符串。</span></span><br><span class="line">    <span class="comment">// ! 比如，传入 root 的值时，没有模块名，是直接传 &#123; a: mutationName &#125; 或者 [ mutationName ]</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">typeof</span> namespace !== <span class="string">'string'</span>) &#123;</span><br><span class="line">      map = namespace <span class="comment">// ! 把命名空间设置为 map</span></span><br><span class="line">      namespace = <span class="string">''</span> <span class="comment">// ! 命名空间为空</span></span><br><span class="line">      <span class="comment">// ! 命名空间没有以 / 结尾时，拼接 / =&gt; moduleName = moduleName/</span></span><br><span class="line">      <span class="comment">// ! 模块名和 type 之间需要使用 / 隔开</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (namespace.charAt(namespace.length - <span class="number">1</span>) !== <span class="string">'/'</span>) &#123;</span><br><span class="line">      namespace += <span class="string">'/'</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> fn(namespace, map)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数返回的也是一个函数，而且这个函数和我们传入的<code>fn</code>参数具有相同的参数<code>namespace</code>和<code>map</code>，这样就可以很好的约束<code>fn</code>的参数。</p>
+<p>首先判断第一个参数<code>namespace</code>是不是字符串，如果不是字符串，那么传入的值就是一个对象或者数组。这时参数<code>namespace</code>就不再是命名空间了，而是把它当成第二个参数<code>map</code>，而第一个参数<code>namespace</code>的值就是空字符串。</p>
+<p>如果第一个参数<code>namespace</code>的值是字符串类型，那么它就是命名空间的模块名，这时候判断模块名是不是以<code>/</code>符号结尾，如果不是的话，需要在模块名后面添加<code>/</code>符号，这样做主要是为了在后面更好的拼接<code>type</code>值。</p>
+<p>最后再次调用<code>fn</code>函数，调用时把处理好的两个参数<code>namespace</code>和<code>map</code>传入进去。</p>
+<p>使用<code>normalizeNamespace</code>函数可以很好的规范<code>namespace</code>和<code>map</code>的值。</p>
+<h3 id="normalizeMap规范化map"><a href="#normalizeMap规范化map" class="headerlink" title="normalizeMap规范化map"></a><code>normalizeMap</code>规范化<code>map</code></h3><p>接下来看下<code>normalizeMap</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Normalize the map</span></span><br><span class="line"><span class="comment"> * normalizeMap([1, 2, 3]) =&gt; [ &#123; key: 1, val: 1 &#125;, &#123; key: 2, val: 2 &#125;, &#123; key: 3, val: 3 &#125; ]</span></span><br><span class="line"><span class="comment"> * normalizeMap(&#123;a: 1, b: 2, c: 3&#125;) =&gt; [ &#123; key: 'a', val: 1 &#125;, &#123; key: 'b', val: 2 &#125;, &#123; key: 'c', val: 3 &#125; ]</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;Array|Object&#125;</span> <span class="variable">map</span></span></span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return <span class="type">&#123;Object&#125;</span></span></span></span><br><span class="line"><span class="comment"> * ! 规范化 Map 👆</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeMap</span>(<span class="params">map</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Array</span>.isArray(map)</span><br><span class="line">    ? map.map(<span class="function"><span class="params">key</span> =&gt;</span> (&#123; key, <span class="attr">val</span>: key &#125;)) <span class="comment">// ! 不修改 key 的名字</span></span><br><span class="line">    : <span class="built_in">Object</span>.keys(map).map(<span class="function"><span class="params">key</span> =&gt;</span> (&#123; key, <span class="attr">val</span>: map[key] &#125;)) <span class="comment">// ! 映射，修改 key的名字</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数的作用是规范传入<code>map</code>参数的，官方注释已经解释的非常清除了。它会把数组类型或者对象类型的<code>map</code>转统一换成一个<code>{key, value}</code>结构的对象组成的数组。</p>
+<p>比如我们使用<code>mapState</code>时，一般是这样使用的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">computed: &#123;</span><br><span class="line">  ...mapState([<span class="string">'value1'</span>, <span class="string">'value2'</span>]),</span><br><span class="line">  ...mapState(&#123;<span class="attr">val3</span>: <span class="string">'value3'</span>, <span class="attr">val4</span>: <span class="string">'val4'</span>&#125;),</span><br><span class="line">  ...mapState(<span class="string">'moduleA'</span>, [<span class="string">'value1'</span>, <span class="string">'value2'</span>]),</span><br><span class="line">  ...mapState(<span class="string">'moduleB'</span>, &#123;<span class="attr">val3</span>: <span class="string">'value3'</span>, <span class="attr">val4</span>: <span class="string">'value4'</span>&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>规范<code>map</code>后就变成下面这样子了</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">computed: &#123;</span><br><span class="line">  ...mapState([&#123; <span class="attr">key</span>:<span class="string">'value1'</span>，val:<span class="string">'value1'</span>&#125;, &#123; <span class="attr">key</span>:<span class="string">'value2'</span>，val:<span class="string">'value2'</span> &#125;]),</span><br><span class="line">  ...mapState([&#123; <span class="attr">key</span>: val3: val: <span class="string">'value3'</span> &#125;, &#123; <span class="attr">key</span>: val4: val: <span class="string">'val4'</span> &#125;]),</span><br><span class="line">  ...mapState(<span class="string">'moduleA/'</span>, [&#123; <span class="attr">key</span>:<span class="string">'value1'</span>，val:<span class="string">'value1'</span>&#125;, &#123; <span class="attr">key</span>:<span class="string">'value2'</span>，val:<span class="string">'value2'</span> &#125;]),</span><br><span class="line">  ...mapState(<span class="string">'moduleB/'</span>, [&#123; <span class="attr">key</span>: val3: val: <span class="string">'value3'</span> &#125;, &#123; <span class="attr">key</span>: val4: val: <span class="string">'val4'</span> &#125;])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在我们可以再看<code>mapState</code>的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> mapState = normalizeNamespace(<span class="function">(<span class="params">namespace, states</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  <span class="comment">// ! states： [1, 2, 3] =&gt; [&#123; key: 1, val: 1 &#125;, &#123; key: 2, val: 2 &#125;, &#123; key: 3, val: 3 &#125;]</span></span><br><span class="line">  <span class="comment">// ! states： &#123;a:1, b:2, c:3&#125; =&gt; [&#123; key: a, val: 1 &#125;, &#123; key: b, val: 2 &#125;, &#123; key: c, val: 3 &#125;]</span></span><br><span class="line">  normalizeMap(states).forEach(<span class="function">(<span class="params">&#123; key, val &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">    res[key] = <span class="function"><span class="keyword">function</span> <span class="title">mappedState</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="comment">// ! 获取 root 上的值</span></span><br><span class="line">      <span class="keyword">let</span> state = <span class="keyword">this</span>.$store.state</span><br><span class="line">      <span class="keyword">let</span> getters = <span class="keyword">this</span>.$store.getters</span><br><span class="line">      <span class="comment">// ! 如果设置了命名空间，即 mapXXX(namespace, ['name1', 'name2'])</span></span><br><span class="line">      <span class="comment">// ! 获取命名空间模块的值，即 store.state.namespace.name1</span></span><br><span class="line">      <span class="keyword">if</span> (namespace) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="built_in">module</span> = getModuleByNamespace(<span class="keyword">this</span>.$store, <span class="string">'mapState'</span>, namespace) <span class="comment">// ! 通过命名空间获取对应模块</span></span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">module</span>) &#123;</span><br><span class="line">          <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line">        state = <span class="built_in">module</span>.context.state <span class="comment">// ! 在模块中获取值</span></span><br><span class="line">        getters = <span class="built_in">module</span>.context.getters</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">typeof</span> val === <span class="string">'function'</span> <span class="comment">// ! 判断是否是函数</span></span><br><span class="line">        ? val.call(<span class="keyword">this</span>, state, getters) <span class="comment">// ! val(state, getters)</span></span><br><span class="line">        : state[val] <span class="comment">// ! 返回 state 中对应的值即可</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// mark vuex getter for devtools</span></span><br><span class="line">    res[key].vuex = <span class="literal">true</span></span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>首先声明了变量<code>res</code>，它的初始值是空对象，最后会返回这个值。</p>
+<p>然后遍历<code>states</code>，就是上面规范后的<code>map</code>的值。然后在<code>res</code>对象中生成一对对<code>{key: mappedState}</code>键值对结构的数据。</p>
+<p>下面主要看下<code>mappedState</code>函数的代码。</p>
+<p>首先声明变量<code>state</code>存储 root 上的 <code>state</code>，声明变量<code>getters</code>存储 root 上的 <code>gettters</code>，如果有命名空间的模块后，会获通过命名空间的模块名获取到这个模块，然后变量<code>state</code>和<code>getters</code>会变成模块上下文中的<code>state</code>和<code>getters</code>。</p>
+<p>再判断<code>val</code> 的值是否是函数，有时候会通过调用函数生成数据。如果是函数的话，会使用<code>call</code>方法来调用，<code>this</code>指向组件自身，然后把<code>state</code>和<code>getters</code>作为参数传入，如果不是函数，一般就是字符串，会返回<code>state</code>中对应<code>val</code>的值。</p>
+<p>我们一般使用时传入字符串类型的值多一点，看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mapState(<span class="string">'moduleA'</span>, [<span class="string">'value'</span>])</span><br></pre></td></tr></table></figure>
+
+<p>这时会返回<code>state[val]</code>，然后重新查看在模块上下文中是怎么修改<code>state</code>的值的</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Object</span>.defineProperties(local, &#123;</span><br><span class="line">  state: &#123;</span><br><span class="line">    <span class="keyword">get</span>: () =&gt; getNestedState(store.state, path) // ! 通过路径获取嵌套的 state</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>也就是说会使用<code>getNestedState</code>方法，通过路径<code>path</code>获取对应的<code>state</code>的值。而这里有命名空间模块，那么<code>path</code>的值就是<code>[&#39;moduleA&#39;，&#39;value&#39;]</code>，这样就可以获取到模块中<code>value</code>的值。</p>
+<h2 id="mapMutations"><a href="#mapMutations" class="headerlink" title="mapMutations"></a><code>mapMutations</code></h2><p>下面看下<code>mapMutations</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> mapMutations = normalizeNamespace(<span class="function">(<span class="params">namespace, mutations</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  normalizeMap(mutations).forEach(<span class="function">(<span class="params">&#123; key, val &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">    res[key] = <span class="function"><span class="keyword">function</span> <span class="title">mappedMutation</span>(<span class="params">...args</span>) </span>&#123;</span><br><span class="line">      <span class="comment">// Get the commit method from store</span></span><br><span class="line">      <span class="keyword">let</span> commit = <span class="keyword">this</span>.$store.commit <span class="comment">// ! 根的 commit</span></span><br><span class="line">      <span class="keyword">if</span> (namespace) &#123;</span><br><span class="line">        <span class="comment">// ! 获取模块</span></span><br><span class="line">        <span class="keyword">const</span> <span class="built_in">module</span> = getModuleByNamespace(</span><br><span class="line">          <span class="keyword">this</span>.$store,</span><br><span class="line">          <span class="string">'mapMutations'</span>,</span><br><span class="line">          namespace</span><br><span class="line">        )</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">module</span>) &#123;</span><br><span class="line">          <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line">        commit = <span class="built_in">module</span>.context.commit <span class="comment">// ! 模块的 commit</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">typeof</span> val === <span class="string">'function'</span></span><br><span class="line">        ? <span class="comment">// ! 调用这个函数 val(commit, args)，函数传入 commit，在函数体中可以使用 commit 来提交其它 mutation</span></span><br><span class="line">          val.apply(<span class="keyword">this</span>, [commit].concat(args))</span><br><span class="line">        : commit.apply(<span class="keyword">this</span>.$store, [val].concat(args)) <span class="comment">// ! string 形式 --&gt; this.$store.commit(val, ...args)</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>逻辑和<code>mapState</code>大同小异，有命名空间模块的时候，获取到的是模块上下文中的<code>commit</code>方法。</p>
+<p>然后判断<code>val</code>是否为函数，如何是的话，会调用这个函数，并且传入<code>commit</code>和参数<code>args</code>。这里为什么要传入<code>commit</code>，因为在函数体中可以使用<code>commit</code>来提交其它的<code>mutation</code>函数。如果<code>val</code>不是函数，那应该是字符串，这时会调用<code>commit</code>函数，<code>this</code>指向的<code>this.$store</code>，然后传入<code>val</code>和参数<code>args</code>，这就相当于是下面这样调用的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.$store.commit(val, ...args)</span><br></pre></td></tr></table></figure>
+
+<p>我们发现<code>mapMutations</code>并不是简单的映射<code>mutation</code>的函数名，而是映射一个包装函数，这个函数里面使用<code>commit</code>来提交<code>mutaion</code>函数，用户在组件中使用这个函数就相当于提交<code>mutation</code>函数，而不需要在组件中再次显示使用<code>commit</code>来提交，这样设计是非常人性化的。</p>
+<h2 id="mapGetters"><a href="#mapGetters" class="headerlink" title="mapGetters"></a><code>mapGetters</code></h2><p>下面看下<code>mapGetters</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> mapGetters = normalizeNamespace(<span class="function">(<span class="params">namespace, getters</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  normalizeMap(getters).forEach(<span class="function">(<span class="params">&#123; key, val &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// The namespace has been mutated by normalizeNamespace</span></span><br><span class="line">    val = namespace + val <span class="comment">// ! moduleName/getterName</span></span><br><span class="line">    res[key] = <span class="function"><span class="keyword">function</span> <span class="title">mappedGetter</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> (</span><br><span class="line">        namespace &amp;&amp;</span><br><span class="line">        !getModuleByNamespace(<span class="keyword">this</span>.$store, <span class="string">'mapGetters'</span>, namespace)</span><br><span class="line">      ) &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (</span><br><span class="line">        process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">        !(val <span class="keyword">in</span> <span class="keyword">this</span>.$store.getters)</span><br><span class="line">      ) &#123;</span><br><span class="line">        <span class="built_in">console</span>.error(<span class="string">`[vuex] unknown getter: <span class="subst">$&#123;val&#125;</span>`</span>)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">this</span>.$store.getters[val] <span class="comment">// ! 根据拼接后的 val 从实例属性 getters 获取对应的值</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// mark vuex getter for devtools</span></span><br><span class="line">    res[key].vuex = <span class="literal">true</span></span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><code>mapGetters</code>的实现和<code>mapState</code>有一些不同，主要是<code>Store</code>中<code>getters</code>属性和<code>state</code>属性的结构不一样。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// state</span></span><br><span class="line">state: &#123;</span><br><span class="line">  count: <span class="number">0</span> <span class="comment">// root state</span></span><br><span class="line">  moduleA: &#123;</span><br><span class="line">    count: <span class="number">1</span></span><br><span class="line">  &#125;,</span><br><span class="line">  moduleB: &#123;</span><br><span class="line">    count: <span class="number">2</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// getters</span></span><br><span class="line">getters: &#123;</span><br><span class="line">  getterFn()&#123;&#125;, <span class="comment">// root getters</span></span><br><span class="line">  <span class="string">'modulesA/getterFn'</span>() &#123;&#125;,</span><br><span class="line">  <span class="string">'modulesA/getterFn2'</span>() &#123;&#125;,</span><br><span class="line">  <span class="string">'modulesB/getterFn'</span>() &#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>getters</code>采用字符串拼接的方式，使得<code>val</code>的值为<code>moduleName/getterName</code>，然后在<code>store.getters</code>中直接通过 key 获取值。</p>
+<h2 id="mapActions"><a href="#mapActions" class="headerlink" title="mapActions"></a><code>mapActions</code></h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> mapActions = normalizeNamespace(<span class="function">(<span class="params">namespace, actions</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  normalizeMap(actions).forEach(<span class="function">(<span class="params">&#123; key, val &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">    res[key] = <span class="function"><span class="keyword">function</span> <span class="title">mappedAction</span>(<span class="params">...args</span>) </span>&#123;</span><br><span class="line">      <span class="comment">// get dispatch function from store</span></span><br><span class="line">      <span class="keyword">let</span> dispatch = <span class="keyword">this</span>.$store.dispatch</span><br><span class="line">      <span class="keyword">if</span> (namespace) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="built_in">module</span> = getModuleByNamespace(</span><br><span class="line">          <span class="keyword">this</span>.$store,</span><br><span class="line">          <span class="string">'mapActions'</span>,</span><br><span class="line">          namespace</span><br><span class="line">        )</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">module</span>) &#123;</span><br><span class="line">          <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line">        dispatch = <span class="built_in">module</span>.context.dispatch</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">typeof</span> val === <span class="string">'function'</span></span><br><span class="line">        ? val.apply(<span class="keyword">this</span>, [dispatch].concat(args))</span><br><span class="line">        : dispatch.apply(<span class="keyword">this</span>.$store, [val].concat(args))</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><code>mapActions</code>的逻辑和<code>mapMutations</code>完全一样，这样就不多赘述了。</p>
+<h2 id="createNamespacedHelpers"><a href="#createNamespacedHelpers" class="headerlink" title="createNamespacedHelpers"></a><code>createNamespacedHelpers</code></h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Rebinding namespace param for mapXXX function in special scoped, and return them by simple object</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param <span class="type">&#123;String&#125;</span> <span class="variable">namespace</span></span></span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return <span class="type">&#123;Object&#125;</span></span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> createNamespacedHelpers = <span class="function"><span class="params">namespace</span> =&gt;</span> (&#123;</span><br><span class="line">  mapState: mapState.bind(<span class="literal">null</span>, namespace),</span><br><span class="line">  mapGetters: mapGetters.bind(<span class="literal">null</span>, namespace),</span><br><span class="line">  mapMutations: mapMutations.bind(<span class="literal">null</span>, namespace),</span><br><span class="line">  mapActions: mapActions.bind(<span class="literal">null</span>, namespace)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>Vuex 还暴露出一个<code>createNamespacedHelpers</code>函数，用来绑定命名空间模块<code>namespace</code>的值，这样后面使用时所有的<code>map</code>都是这个模块下面的值。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/v2/vuex/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://vuex.vuejs.org/zh/" target="_blank" rel="noopener">Vuex 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vuex/tree/learn-vuex" target="_blank" rel="noopener">Vuex 源码学习分支</a></p>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20191018-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20191018-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/" class="post-title-link" itemprop="url">Vuex3源码学习笔记之Vuex的数据操作</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-18 20:00:00" itemprop="dateCreated datePublished" datetime="2019-10-18T20:00:00+08:00">2019-10-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vuex/" itemprop="url" rel="index"><span itemprop="name">Vuex</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>8.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>8 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="数据存储和读取"><a href="#数据存储和读取" class="headerlink" title="数据存储和读取"></a>数据存储和读取</h2><h3 id="state"><a href="#state" class="headerlink" title="state"></a>state</h3><p><code>state</code>是在模块安装<code>installModule</code>函数中设置的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// set state</span></span><br><span class="line"><span class="keyword">if</span> (!isRoot &amp;&amp; !hot) &#123;</span><br><span class="line">  <span class="keyword">const</span> parentState = getNestedState(rootState, path.slice(<span class="number">0</span>, <span class="number">-1</span>)) <span class="comment">// ! 获取父级的 state</span></span><br><span class="line">  <span class="keyword">const</span> moduleName = path[path.length - <span class="number">1</span>] <span class="comment">// ! 获取模块名</span></span><br><span class="line">  store._withCommit(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    Vue.set(parentState, moduleName, <span class="built_in">module</span>.state) <span class="comment">// ! 设置子模块，建立父子关系，并且为响应性数据</span></span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>getNestedState</code>方法获取父级模块，然后把所有模块下面的<code>state</code>数据都拷贝到 root 的<code>state</code>中。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20191018-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20191011-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20191011-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96/" class="post-title-link" itemprop="url">Vuex3源码学习笔记之Vuex的初始化</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-11 20:00:00" itemprop="dateCreated datePublished" datetime="2019-10-11T20:00:00+08:00">2019-10-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vuex/" itemprop="url" rel="index"><span itemprop="name">Vuex</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>44k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>40 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><code>Store.js</code>文件中的代码中，会导出一个<code>Store</code>类，我们在使用 Vuex 的时候都是从先创建一个<code>Store</code>实例对象开始的。</p>
+<p>下面看下<code>Store</code>实例对象的初始化过程。</p>
+<h2 id="Store-的初始化"><a href="#Store-的初始化" class="headerlink" title="Store 的初始化"></a>Store 的初始化</h2><p>先看下<code>Store</code>类的初始化函数<code>constructor</code>的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">constructor</span>(options = &#123;&#125;) &#123;</span><br><span class="line">  <span class="comment">// Auto install if it is not done yet and `window` has `Vue`.</span></span><br><span class="line">  <span class="comment">// To allow users to avoid auto-installation in some cases,</span></span><br><span class="line">  <span class="comment">// this code should be placed here. See #731</span></span><br><span class="line">  <span class="comment">// ! 使用 Vuex 为引入外链时，会自动安装插件</span></span><br><span class="line">  <span class="keyword">if</span> (!Vue &amp;&amp; <span class="keyword">typeof</span> <span class="built_in">window</span> !== <span class="string">'undefined'</span> &amp;&amp; <span class="built_in">window</span>.Vue) &#123;</span><br><span class="line">    install(<span class="built_in">window</span>.Vue)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在我们使用外链来引入 Vuex 时，会自动安装 Vuex，不需要再手动调用<code>use</code>方法来安装。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20191011-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20191005-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E5%AE%89%E8%A3%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20191005-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E5%AE%89%E8%A3%85/" class="post-title-link" itemprop="url">Vuex3源码学习笔记之Vuex的安装</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-10-05 20:00:00" itemprop="dateCreated datePublished" datetime="2019-10-05T20:00:00+08:00">2019-10-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vuex/" itemprop="url" rel="index"><span itemprop="name">Vuex</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Vuex 是一个专为 Vue.js 应用程序开发的<strong>状态管理模式</strong>。它采用集中式存储管理应用的所有组件的状态，并以相应的规则保证状态以一种可预测的方式发生变化。</p>
+<h2 id="源码结构"><a href="#源码结构" class="headerlink" title="源码结构"></a>源码结构</h2><p>先查看下 src 下面的文件目录结构</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20191005-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E5%AE%89%E8%A3%85/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/" class="post-title-link" itemprop="url">Vue2源码学习笔记之初始化终局</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-30 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-30T20:00:00+08:00">2019-09-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>6.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>再次回到<code>initState</code>函数中，其中<code>data</code>、<code>watch</code>、<code>computed</code>和<code>props</code>选项的初始化都已讲解，下面还剩下<code>methods</code>选项的初始化未讲解。看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (opts.methods) initMethods(vm, opts.methods)</span><br></pre></td></tr></table></figure>
+
+<p>通过调用<code>initMethods</code>函数初始化<code>methods</code>选项，还需要传入实例对象<code>vm</code>和合并选项后的<code>methods</code>属性。</p>
+<h2 id="initMethods"><a href="#initMethods" class="headerlink" title="initMethods"></a><code>initMethods</code></h2><p>下面看下<code>initMethods</code> 函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> props = vm.$options.props</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> methods) &#123;</span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>props</code>存储合并选项后的<code>props</code>选项，这个常量在后面会用到。</p>
+<p>然后接下来就是一个<code>for</code>循环语句，遍历<code>methods</code>选项，下面看下<code>for</code>循环语句里面的内容。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/" class="post-title-link" itemprop="url">Vue2源码学习笔记之Props</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-28 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-28T20:00:00+08:00">2019-09-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>15k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>14 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>前面章节通过初始化<code>data</code>选项的<code>initData</code>函数讲解了 Vue 的响应式系统。</p>
+<p>下面继续讲解<code>props</code>选项的初始化。</p>
+<h2 id="props的初始化"><a href="#props的初始化" class="headerlink" title="props的初始化"></a><code>props</code>的初始化</h2><p>回到<code>initState</code>函数，查看初始化<code>props</code>选项的代码，在<code>core/instance/state.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (opts.props) initProps(vm, opts.props)</span><br></pre></td></tr></table></figure>
+
+<p>通过调用<code>initProps</code>函数初始化<code>props</code>选项，还需要传入实例对象<code>vm</code>和合并选项后的<code>props</code>属性。</p>
+<p>下面看下<code>initProps</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">initProps</span>(<span class="params">vm: Component, propsOptions: Object</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> propsData = vm.$options.propsData || &#123;&#125; <span class="comment">// ! 获取 props 数据来源</span></span><br><span class="line">  <span class="keyword">const</span> props = (vm._props = &#123;&#125;)</span><br><span class="line">  <span class="comment">// cache prop keys so that future props updates can iterate using Array</span></span><br><span class="line">  <span class="comment">// instead of dynamic object key enumeration.</span></span><br><span class="line">  <span class="keyword">const</span> keys = (vm.$options._propKeys = [])</span><br><span class="line">  <span class="keyword">const</span> isRoot = !vm.$parent</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>propsData</code>存储<code>vm.$options.propsData</code>属性，这是外界传进来的<code>props</code>数据。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/" class="post-title-link" itemprop="url">Vue2源码学习笔记之计算属性</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-26 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-26T20:00:00+08:00">2019-09-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>9.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>下面看下 Vue 的计算属性的实现，计算属性收集依赖和触发依赖的方式和普通的响应式数据是不一样的。</p>
+<p>回到<code>initState</code>函数中，在<code>core/instance/state.js</code>文件中，看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (opts.computed) initComputed(vm, opts.computed)</span><br></pre></td></tr></table></figure>
+
+<p>如果设置了<code>computed</code>选项，就调用<code>initComputed</code>初始化选项。</p>
+<h2 id="initComputed"><a href="#initComputed" class="headerlink" title="initComputed"></a><code>initComputed</code></h2><p>看下<code>initComputed</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 初始化计算属性选项</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">initComputed</span>(<span class="params">vm: Component, computed: Object</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// $flow-disable-line</span></span><br><span class="line">  <span class="keyword">const</span> watchers = (vm._computedWatchers = <span class="built_in">Object</span>.create(<span class="literal">null</span>)) <span class="comment">// ! 维护一个常量存储计算属性</span></span><br><span class="line">  <span class="comment">// computed properties are just getters during SSR</span></span><br><span class="line">  <span class="keyword">const</span> isSSR = isServerRendering()</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先声明一个常量<code>watchers</code>存储<code>vm._computedWatchers</code>属性，默认值是空对象，<code>vm._computedWatchers</code>属性存储实例对象的计算属性观察者。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20190926-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%AE%A1%E7%AE%97%E5%B1%9E%E6%80%A7/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/" class="post-title-link" itemprop="url">Vue2源码学习笔记之侦听器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-25 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-25T20:00:00+08:00">2019-09-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>5.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Vue 给我们提供了侦听器方法<code>vm.$watch</code>和选项<code>watch</code>，用来观察 Vue 实例变化，然后执行一些操作。</p>
+<p>下面看下它们是怎么实现的，其实它们都是基于观察者<code>watcher</code>的封装。</p>
+<h2 id="vm-watch"><a href="#vm-watch" class="headerlink" title="vm.$watch"></a><code>vm.$watch</code></h2><p>先看<code>Vue.prototype.$watch</code>方法的代码，在<code>core/instance/state.js</code>文件中。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Vue.prototype.$watch = <span class="function"><span class="keyword">function</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  expOrFn: string | Function,</span></span></span><br><span class="line"><span class="function"><span class="params">  cb: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  options?: Object</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Function</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先看下<code>$watch</code>方法的参数，有三个参数，分别是<code>expOrFn</code>、<code>cb</code>和<code>options</code>，我们发现这三个参数对应着<code>Watcher</code>构造函数的第二个到第四个参数。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20190925-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E4%BE%A6%E5%90%AC%E5%99%A8/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190923-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85%E7%9A%84%E6%89%A7%E8%A1%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20190923-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85%E7%9A%84%E6%89%A7%E8%A1%8C/" class="post-title-link" itemprop="url">Vue2源码学习笔记之观察者的执行</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-23 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-23T20:00:00+08:00">2019-09-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>8.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="同步执行"><a href="#同步执行" class="headerlink" title="同步执行"></a>同步执行</h2><h3 id="单个观察者同步执行"><a href="#单个观察者同步执行" class="headerlink" title="单个观察者同步执行"></a>单个观察者同步执行</h3><p>先看下同步执行的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 同步执行，不需要调用 nextTick 执行观察者 =&gt; 用于 watch 自定义的观察者</span></span><br><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (<span class="keyword">this</span>.sync) &#123;</span><br><span class="line">  <span class="keyword">this</span>.run()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果设置了观察者的<code>sync</code>属性为<code>true</code>的话，会执行了观察者的<code>run</code>方法，执行同步更新。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20190923-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85%E7%9A%84%E6%89%A7%E8%A1%8C/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190921-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/blog/20190921-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85/" class="post-title-link" itemprop="url">Vue2源码学习笔记之观察者</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-21 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-21T20:00:00+08:00">2019-09-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>10k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Watcher-观察者"><a href="#Watcher-观察者" class="headerlink" title="Watcher 观察者"></a><code>Watcher</code> 观察者</h2><p>下面看下观察者<code>Watcher</code>的代码，这个类比较复杂，里面创建了很多属性和方法。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/blog/20190921-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E8%A7%82%E5%AF%9F%E8%80%85/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/">8</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

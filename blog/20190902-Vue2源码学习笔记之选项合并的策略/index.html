@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="上一章的代码规范化了各个选项的值，主要是为了接下来更好的进行合并选项。 下面开始就是真正进行选项合并的代码。 具体要怎么合并呢？不同的字段的合并策略是一样的吗？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之选项合并的策略">
+<meta property="og:url" content="https://haledeng.com/blog/20190902-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E7%AD%96%E7%95%A5/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="上一章的代码规范化了各个选项的值，主要是为了接下来更好的进行合并选项。 下面开始就是真正进行选项合并的代码。 具体要怎么合并呢？不同的字段的合并策略是一样的吗？">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-02T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:57:26.879Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190902-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E7%AD%96%E7%95%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之选项合并的策略 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190902-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E7%AD%96%E7%95%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之选项合并的策略
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-02 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-02T20:00:00+08:00">2019-09-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>15k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>14 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>上一章的代码规范化了各个选项的值，主要是为了接下来更好的进行合并选项。</p>
+<p>下面开始就是真正进行选项合并的代码。</p>
+<p>具体要怎么合并呢？不同的字段的合并策略是一样的吗？</p>
+<a id="more"></a>
+
+<h2 id="mergeField"><a href="#mergeField" class="headerlink" title="mergeField"></a><code>mergeField</code></h2><p>继续看最后剩下的代码，这里开始进行真正的选项合并。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> options = &#123;&#125;</span><br><span class="line"><span class="keyword">let</span> key</span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 遍历默认配置</span></span><br><span class="line"><span class="keyword">for</span> (key <span class="keyword">in</span> parent) &#123;</span><br><span class="line">  mergeField(key)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 遍历用户配置</span></span><br><span class="line"><span class="keyword">for</span> (key <span class="keyword">in</span> child) &#123;</span><br><span class="line">  <span class="keyword">if</span> (!hasOwn(parent, key)) &#123;</span><br><span class="line">    mergeField(key)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 根据 key 值的不同，使用不同的合并策略</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">mergeField</span>(<span class="params">key</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> strat = strats[key] || defaultStrat</span><br><span class="line">  options[key] = strat(parent[key], child[key], vm, key)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> options</span><br></pre></td></tr></table></figure>
+
+<p>首先声明一个变量<code>options</code>为空对象，最后再返回它，这说明选项合并后的值是对象类型。</p>
+<p>然后遍历 Vue 的默认选项<code>parent</code>，调用<code>mergeField</code>函数并传入<code>key</code>值。</p>
+<p>再遍历用户选项<code>child</code>，还是使用<code>mergeField</code>函数并传入<code>key</code>值，但是和上面不同的是要求<code>key</code>必须是<code>parent</code>中没有的字段。</p>
+<p>为什么要这样设计呢？看<code>mergeField</code>函数就知道了。</p>
+<p>在使用策略函数合并时都会把值传入，所以不需要重复调用。</p>
+<p><code>mergeField</code>函数是合并选项字段的方法，首先根据 <code>key</code> 的值选择它的专用的合并策略，如果没有专用的合并策略就使用默认的合并策略。</p>
+<p>这里的<code>strats</code>是一个合并策略函数组成的对象，对象里面的 <code>key</code> 对应选项字段中的<code>key</code>，而它的<code>value</code> 对应的是字段的合并策略函数。再调用策略函数的时候，需要把<code>parent</code>字段的值、<code>child</code>选项字段的值以及实例对象<code>vm</code>和<code>key</code>作为参数一起传入。然后把调用的结果（即合并后的选项）赋值给一开始声明的<code>options</code>对象中。<code>options</code>对象中的<code>key</code>也对应选项字段的<code>key</code>，它的值就是合并选项后的值。</p>
+<p>这就是合并选项的逻辑，比较简单，就是根据选项中不同的字段选择不同的合并策略。不过难点并不在这里，而是在合并选项的策略函数上。</p>
+<p>下面来看下各个字段的合并策略函数。</p>
+<h2 id="strats"><a href="#strats" class="headerlink" title="strats"></a><code>strats</code></h2><h3 id="defaultStrat"><a href="#defaultStrat" class="headerlink" title="defaultStrat"></a><code>defaultStrat</code></h3><p>先看下默认的合并策略<code>defaultStrat</code>函数的代码。在<code>mergeField</code>函数中，我们知道如果<code>strats</code>中没有找到<code>key</code>的合并策略，就会使用默认的合并策略函数。</p>
+<p>代码在<code>core/util/options.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> defaultStrat = <span class="function"><span class="keyword">function</span>(<span class="params">parentVal: any, childVal: any</span>): <span class="title">any</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> childVal === <span class="literal">undefined</span> ? parentVal : childVal</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>它的逻辑比较简单，如果没有用户选项<code>childVal</code>，就使用默认选项<code>parentVal</code>，否则使用用户选项<code>childVal</code>。</p>
+<p>使用默认合并策略的字段有<code>el</code>和<code>propsData</code>这些字段</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  strats.el = strats.propsData = <span class="function"><span class="keyword">function</span>(<span class="params">parent, child, vm, key</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!vm) &#123;</span><br><span class="line">      warn(</span><br><span class="line">        <span class="string">`option "<span class="subst">$&#123;key&#125;</span>" can only be used during instance `</span> +</span><br><span class="line">          <span class="string">'creation with the `new` keyword.'</span></span><br><span class="line">      )</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> defaultStrat(parent, child)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 默认选项</span></span><br><span class="line">el: <span class="string">'#app'</span>,</span><br><span class="line">propsData: &#123;</span><br><span class="line">  name: <span class="string">'Hale'</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 用户选项</span></span><br><span class="line">el: <span class="string">'#root'</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 合并后选项</span></span><br><span class="line">el: <span class="string">'#root'</span>,</span><br><span class="line">propsData: &#123;</span><br><span class="line">  name: <span class="string">'Hale'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="data-选项的合并策略"><a href="#data-选项的合并策略" class="headerlink" title="data 选项的合并策略"></a><code>data</code> 选项的合并策略</h3><p>接下来看下<code>data</code>字段的合并策略函数</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">strats.data = <span class="function"><span class="keyword">function</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parentVal: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  childVal: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): ?<span class="title">Function</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!vm) &#123;</span><br><span class="line">    <span class="keyword">if</span> (childVal &amp;&amp; <span class="keyword">typeof</span> childVal !== <span class="string">'function'</span>) &#123;</span><br><span class="line">      process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp;</span><br><span class="line">        warn(</span><br><span class="line">          <span class="string">'The "data" option should be a function '</span> +</span><br><span class="line">            <span class="string">'that returns a per-instance value in component '</span> +</span><br><span class="line">            <span class="string">'definitions.'</span>,</span><br><span class="line">          vm</span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">      <span class="keyword">return</span> parentVal</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> mergeDataOrFn(parentVal, childVal)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> mergeDataOrFn(parentVal, childVal, vm)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数逻辑分为两种情况，有实例对象<code>vm</code>和没有<code>vm</code>。</p>
+<p>当我们使用<code>Vue.extend</code>方法生成子类时，这个子类是一个构造函数，当它的<code>options</code>作为用户选项<code>childVal</code>时，它是没有<code>vm</code>的。</p>
+<p>不过不管有没有实例对象，它都是使用<code>mergeDataOrFn</code>函数来进行选项合并的。</p>
+<p>另外，子类组件的<code>data</code>选项如果不是函数类型，在非生产环境时会报错，然后直接返回<code>parentVal</code>选项。</p>
+<h4 id="mergeDataOrFn"><a href="#mergeDataOrFn" class="headerlink" title="mergeDataOrFn"></a><code>mergeDataOrFn</code></h4><p>下面看下<code>mergeDataOrFn</code>函数的代码，这里的逻辑同样分为两种情况，分别为有实例对象<code>vm</code>和没有<code>vm</code>。</p>
+<p>先看下没有实例对象<code>vm</code>的代码，即合并子类的选项</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">mergeDataOrFn</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parentVal: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  childVal: any,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): ?<span class="title">Function</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!vm) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!childVal) &#123;</span><br><span class="line">      <span class="keyword">return</span> parentVal</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!parentVal) &#123;</span><br><span class="line">      <span class="keyword">return</span> childVal</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">mergedDataFn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> mergeData(</span><br><span class="line">        <span class="keyword">typeof</span> childVal === <span class="string">'function'</span> ? childVal.call(<span class="keyword">this</span>, <span class="keyword">this</span>) : childVal,</span><br><span class="line">        <span class="keyword">typeof</span> parentVal === <span class="string">'function'</span> ? parentVal.call(<span class="keyword">this</span>, <span class="keyword">this</span>) : parentVal</span><br><span class="line">      )</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先是两个 <code>if</code>语句，先看第一个。如果没有子选项 <code>childVal</code>，就返回父选项<code>parentVal</code>。比如我们在扩展时没有设置<code>data</code>选项的值。像下面这种情况，就会采用这种逻辑。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Stor = Vue.extend(&#123;&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>可能有人会问既然子选项 <code>childVal</code>中没有设置<code>data</code>选项，父选项<code>parentVal</code>通常也不会有<code>data</code>的值，都没有<code>data</code>这个字段，也就不存在去调用<code>data</code>的策略函数了。</p>
+<p>为什么还要返回<code>parentVal</code>，<code>parentVal</code>可能存在吗？</p>
+<p>答案是肯定的，如下示例代码中，在使用二次<code>extend</code>时，<code>Child</code> 子类的<code>parentVal</code> 是存在的，就是在创建<code>Parent</code>子类时传入的<code>data</code>的值。但是在创建<code>Child</code>子类时没有传入<code>data</code>的值，所以<code>Child</code>的<code>childVal</code>是没有的。那么对于<code>Child</code>的子类的创建的函数，存在<code>parentVal</code>而不存在<code>childVal</code>。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Parent = Vue.extend(&#123;</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123; <span class="attr">test1</span>: <span class="number">1</span> &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">const</span> Child = Parent.entend(&#123;&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>接下来再看第二个<code>if</code>语句。如果没有<code>parentVal</code>，就返回<code>childVal</code>。其实这种情况在实际开发中应该是<strong>出现最多</strong>的。所以<code>parentVal</code>和<code>childVal</code>必定有其中一个，否则就不会执行<code>data</code>选项合并策略了。</p>
+<p>接下来查看<code>parentVal</code>和<code>childVal</code>都存在的情况的逻辑代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">mergedDataFn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> mergeData(</span><br><span class="line">    <span class="keyword">typeof</span> childVal === <span class="string">'function'</span> ? childVal.call(<span class="keyword">this</span>, <span class="keyword">this</span>) : childVal,</span><br><span class="line">    <span class="keyword">typeof</span> parentVal === <span class="string">'function'</span> ? parentVal.call(<span class="keyword">this</span>, <span class="keyword">this</span>) : parentVal</span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里返回一个函数<code>mergedDataFn</code>，这个函数调用了<code>mergeData</code>来处理<code>data</code>选项的合并，它需要传入<code>childVal</code> 和<code>parentVal</code> 这两个参数。<strong>注意</strong>参数传入的<strong>顺序</strong>，先子后父。另外传入的两个参数只能是对象类型。</p>
+<p>在 Vue 实例组件中<code>data</code>的值都是函数类型的，它是一个返回普通对象的函数。这时需要调用这个函数，输出对象类型的值。在使用<code>call</code>调用的时候传入了两个 <code>this</code>。第一个<code>this</code>是指向<code>data</code>函数的作用域；而第二个<code>this</code>是<code>data</code>函数的参数，指向生成的实例对象。</p>
+<p>接下来看<code>else</code>代码块的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> <span class="function"><span class="keyword">function</span> <span class="title">mergedInstanceDataFn</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">// instance merge</span></span><br><span class="line">  <span class="keyword">const</span> instanceData =</span><br><span class="line">    <span class="keyword">typeof</span> childVal === <span class="string">'function'</span> ? childVal.call(vm, vm) : childVal</span><br><span class="line">  <span class="keyword">const</span> defaultData =</span><br><span class="line">    <span class="keyword">typeof</span> parentVal === <span class="string">'function'</span> ? parentVal.call(vm, vm) : parentVal</span><br><span class="line">  <span class="keyword">if</span> (instanceData) &#123;</span><br><span class="line">    <span class="keyword">return</span> mergeData(instanceData, defaultData)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> defaultData</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里表示存在实例对象<code>vm</code>的情况，也就是说上面代码是实例对象初始化时合并选项的代码。</p>
+<p>这样也返回一个叫<code>mergedInstanceDataFn</code>函数。函数中需要先获取一个<code>childVal</code>和<code>parentVal</code>生成的对象类型的值。如果选项是函数，需要调用这个函数获取对象类型的值，在调用时传入的参数是两个<code>vm</code>，即实例对象。第一个<code>vm</code>表示<code>this</code>的指向是实例对象，第二个<code>vm</code>是<code>data</code>函数的参数。</p>
+<p>在组件中，<code>data</code>是一个函数，它其实有很多种写法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">data () &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    testData: <span class="keyword">this</span>.propsData</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 另外的写法</span></span><br><span class="line">data(vm) &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    testData: vm.propsData</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 还可以使用解构</span></span><br><span class="line">data(&#123; propsData &#125;) &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    testData: propsData</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (instanceData) &#123;</span><br><span class="line">  <span class="keyword">return</span> mergeData(instanceData, defaultData)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> defaultData</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判端<code>childVal</code>输出的值是否存在，如果存在，就调用<code>mergeData</code>函数把它和<code>parentVal</code>输出的值进行合并，不存在就直接返回<code>parentVal</code>输出的值。</p>
+<p>下面看下<code>mergeData</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">mergeData</span>(<span class="params">to: Object, from: ?Object</span>): <span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!<span class="keyword">from</span>) <span class="keyword">return</span> to</span><br><span class="line">  <span class="keyword">let</span> key, toVal, fromVal</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> keys = hasSymbol ? <span class="built_in">Reflect</span>.ownKeys(<span class="keyword">from</span>) : <span class="built_in">Object</span>.keys(<span class="keyword">from</span>)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; keys.length; i++) &#123;</span><br><span class="line">    key = keys[i]</span><br><span class="line">    <span class="comment">// in case the object is already observed...</span></span><br><span class="line">    <span class="keyword">if</span> (key === <span class="string">'__ob__'</span>) <span class="keyword">continue</span></span><br><span class="line">    toVal = to[key]</span><br><span class="line">    fromVal = <span class="keyword">from</span>[key]</span><br><span class="line">    <span class="keyword">if</span> (!hasOwn(to, key)) &#123;</span><br><span class="line">      <span class="keyword">set</span>(to, key, fromVal)</span><br><span class="line">    &#125; else if (</span><br><span class="line">      toVal !== fromVal &amp;&amp;</span><br><span class="line">      isPlainObject(toVal) &amp;&amp;</span><br><span class="line">      isPlainObject(fromVal)</span><br><span class="line">    ) &#123;</span><br><span class="line">      mergeData(toVal, fromVal)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> to</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>mergeData</code>函数接收两个参数，<code>to</code>和<code>from</code>，从参数名中可以看出是把第二个参数合并到第一个参数中。</p>
+<p>然后再看函数的返回值为<code>to</code>，即返第一个参数合并的值，所以为什么我们在上面调用它的时候传入参数的顺序是先子后父了，即先传入<code>childVal</code>再传入<code>parentVal</code>，<strong>因为是以用户选项<code>childVal</code>为主</strong>。</p>
+<p>看代码第一句<code>if (!from) return to</code>，如果没有第二个参数<code>from</code>，直接返回第一个参数<code>to</code>。</p>
+<p>然后获取第二个参数<code>from</code>的 <code>keys</code>，判断是否支持 ES6 的<code>Promise</code> 的语法，如果支持则使用<code>Reflect.ownKeys(from)</code>，不支持就使用对象的方法<code>Object.keys(from)</code>。</p>
+<p>它们两个有什么<strong>区别</strong>吗？使用<code>Object.keys</code>只会返回可枚举的<code>key</code>值，而<code>Reflect.ownKeys</code>会返回<strong>所有的</strong><code>key</code>值。</p>
+<p>然后去遍历<code>keys</code>，如果<code>key</code>是<code>&#39;__ob__</code> 时，这是侦听对象（后面讲响应式系统时再讲解），跳过这次循环。</p>
+<p>在看下<code>to</code>选项是否有<code>key</code>这个值，如果没有的话，使用<code>set</code>方法把它加入到<code>to</code>中。这里的<code>set</code>和全局 API <code>Vue.set</code>是同一个函数，可以把<code>data</code>选项的属性变成响应式。</p>
+<p>另外，还需要判断，在相同<code>key</code>时，<code>to</code>和<code>from</code>的值是否相同，如果不相同且它们都是普通对象时，递归调用<code>mergeData</code>函数进行深度合并。</p>
+<p><strong>小结</strong>，<code>mergeData</code>合并策略是以<code>to</code>选项为主。对于<code>from</code>选项，只有<code>to</code>选项中不存在的<code>key</code>值，才会被添加到<code>to</code>选项中。如果存在相同的<code>key</code>时，当它的值是原型类型时，选取<code>to</code>的值，即<code>to</code>的值覆盖掉<code>from</code>的值；当它的值是对象类型时，使用递归进行深度合并。</p>
+<p>另外还有一点<strong>非常重要</strong>，那就是合并后的<code>data</code>选项还是一个<strong>函数</strong>。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// from</span></span><br><span class="line">data() &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    age: <span class="number">20</span>,</span><br><span class="line">    name: <span class="string">'Hale'</span>,</span><br><span class="line">    friends: &#123;</span><br><span class="line">      Beijing: <span class="string">'xiaoming'</span>,</span><br><span class="line">      Shenzhen: <span class="string">'xiaohong'</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// to</span></span><br><span class="line">data() &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    age: <span class="number">18</span>,</span><br><span class="line">    friends: &#123;</span><br><span class="line">      Beijing: <span class="string">'Jack'</span>,</span><br><span class="line">      Shanghai: <span class="string">'Amy'</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// after merge</span></span><br><span class="line">data() &#123;</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    age: <span class="number">18</span>,</span><br><span class="line">    name: <span class="string">'Hale'</span>,</span><br><span class="line">    friends: &#123;</span><br><span class="line">      Beijing: <span class="string">'Jack'</span>,</span><br><span class="line">      Shanghai: <span class="string">'Amy'</span>,</span><br><span class="line">      Shenzhen: <span class="string">'xiaohong'</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="mergeHook-生命周期函数的合并策略"><a href="#mergeHook-生命周期函数的合并策略" class="headerlink" title="mergeHook 生命周期函数的合并策略"></a><code>mergeHook</code> 生命周期函数的合并策略</h3><p>下面看下生命周期钩子函数的合并策略</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">mergeHook</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parentVal: ?Array&lt;Function&gt;,</span></span></span><br><span class="line"><span class="function"><span class="params">  childVal: ?Function | ?Array&lt;Function&gt;</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): ?<span class="title">Array</span>&lt;<span class="title">Function</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> res = childVal</span><br><span class="line">    ? parentVal</span><br><span class="line">      ? parentVal.concat(childVal)</span><br><span class="line">      : <span class="built_in">Array</span>.isArray(childVal)</span><br><span class="line">      ? childVal</span><br><span class="line">      : [childVal]</span><br><span class="line">    : parentVal</span><br><span class="line">  <span class="keyword">return</span> res ? dedupeHooks(res) : res</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先看函数的参数，<code>parentVal</code>是一个由函数组成的数组，而<code>childVal</code>可能是函数或者是由函数组成的数组，它们都是可选的。</p>
+<p>再看代码，没有使用<code>if</code>语句，而是使用了三组三元操作符。</p>
+<p>首先判断是否有<code>childVal</code>，没有的话就返回<code>parentVal</code>。</p>
+<p>有<code>childVal</code>的话，再判断是否有<code>parentVal</code>，如果有<code>parentVal</code>，就把<code>childVal</code>合并到<code>parentVal</code>中组成新的数组。如果没有<code>parentVal</code>，判断<code>childVal</code>的类型是否是数组，如果是数组，就直接返回它本身；如果不是数组，就把它包装成数组并返回。总之合并后的<code>res</code>一定是个数组。</p>
+<p>最后输出结果是还需要调用<code>dedupeHooks</code>函数去除重复的钩子。函数遍历里数组里面的函数，如果多个函数来自同一个引用地址，则会把其它相同引用的函数排除掉。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">dedupeHooks</span>(<span class="params">hooks</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> res = []</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; hooks.length; i++) &#123;</span><br><span class="line">    <span class="keyword">if</span> (res.indexOf(hooks[i]) === <span class="number">-1</span>) &#123;</span><br><span class="line">      res.push(hooks[i])</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面的合并策略中可以得知：在组件实例中，创建的钩子可以是函数，也可以是多个函数组成的数组。</p>
+<p><strong>小结</strong>，<code>mergeHook</code> 合并策略是把同类的所有的钩子都合并放到一个数组中。</p>
+<p>但是官方文档中并没有说明这种情况，但是经过实践，是可以这么做的，如下面的代码，输出按照顺序指向函数的打印结构。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  created: [</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">fn1</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'created hook fn1'</span>)</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">fn2</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'created hook fn2'</span>)</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">fn3</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'created hook fn3'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>继续看下面代码，使用生命周期函数合并策略的字段那肯定就是生命周期钩子，比如<code>beforeCreate</code>、<code>mounted</code>等。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">LIFECYCLE_HOOKS.forEach(<span class="function"><span class="params">hook</span> =&gt;</span> &#123;</span><br><span class="line">  strats[hook] = mergeHook</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> LIFECYCLE_HOOKS = [</span><br><span class="line">  <span class="string">'beforeCreate'</span>,</span><br><span class="line">  <span class="string">'created'</span>,</span><br><span class="line">  <span class="string">'beforeMount'</span>,</span><br><span class="line">  <span class="string">'mounted'</span>,</span><br><span class="line">  <span class="string">'beforeUpdate'</span>,</span><br><span class="line">  <span class="string">'updated'</span>,</span><br><span class="line">  <span class="string">'beforeDestroy'</span>,</span><br><span class="line">  <span class="string">'destroyed'</span>,</span><br><span class="line">  <span class="string">'activated'</span>,</span><br><span class="line">  <span class="string">'deactivated'</span>,</span><br><span class="line">  <span class="string">'errorCaptured'</span>,</span><br><span class="line">  <span class="string">'serverPrefetch'</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// parentVal</span></span><br><span class="line">created: [<span class="function"><span class="keyword">function</span> <span class="title">f1</span>(<span class="params"></span>) </span>&#123;&#125;, <span class="function"><span class="keyword">function</span> <span class="title">f2</span>(<span class="params"></span>) </span>&#123;&#125;],</span><br><span class="line"></span><br><span class="line"><span class="comment">// childVal</span></span><br><span class="line">created: <span class="function"><span class="keyword">function</span> <span class="title">f3</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'f3'</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// after merge</span></span><br><span class="line">created: [</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">f1</span>(<span class="params"></span>) </span>&#123;&#125;,</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">f2</span>(<span class="params"></span>) </span>&#123;&#125;,</span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">f3</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  	<span class="built_in">console</span>.log(<span class="string">'f3'</span>)</span><br><span class="line">	&#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<h3 id="mergeAssets-资源选项的合并策略"><a href="#mergeAssets-资源选项的合并策略" class="headerlink" title="mergeAssets 资源选项的合并策略"></a><code>mergeAssets</code> 资源选项的合并策略</h3><p>在 Vue 的实例选项中，<code>components</code>、<code>directives</code>、<code>filters</code>被认为是资源。</p>
+<p>为什么呢？因为这些选项都是可以作为第三方库来提供的。</p>
+<p>资源选项的合并策略的函数是<code>mergeAssets</code> ，下面看下它的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">mergeAssets</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parentVal: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  childVal: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  key: string</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> res = <span class="built_in">Object</span>.create(parentVal || <span class="literal">null</span>)</span><br><span class="line">  <span class="keyword">if</span> (childVal) &#123;</span><br><span class="line">    process.env.NODE_ENV !== <span class="string">'production'</span> &amp;&amp; assertObjectType(key, childVal, vm)</span><br><span class="line">    <span class="keyword">return</span> extend(res, childVal)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果有<code>parentVal</code>则以它作为原型对象创建对象<code>res</code>，没有的话以<code>null</code>为原型对象创建对象<code>res</code>。</p>
+<p>然后判断是否有<code>childVal</code>，如果有的话使用<code>extend</code>把它扩展到<code>res</code>中；如果没有的话，直接返回<code>res</code>。</p>
+<p>另外，有<code>childVal</code>且在非生产环境时，会判断<code>childVal</code>的对象中的值是不是一个普通对象，如果不是会报错。</p>
+<p><strong>小结</strong>，<code>mergeAssets</code> 合并策略先创建以<code>parentVal</code>为原型创建对象<code>res</code>，然后再使用<code>extend</code>函数去扩展<code>childVal</code>，这样如果存在相同的<code>key</code>时，<code>childVal</code>选项就不会覆盖掉<code>parentVal</code>选项的值。因为<code>parentVal</code>的是值保存在<code>res</code>的隐式原型对象 <code>__proto__</code>字段中。</p>
+<p><code>extend</code>函数代码如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">extend</span>(<span class="params">to: Object, _from: ?Object</span>): <span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> _from) &#123;</span><br><span class="line">    to[key] = _from[key]</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> to</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用资源选项的合并策略的字段当然就是我们上面提到的资源选项<code>components</code>、<code>directives</code>、<code>filters</code>。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ASSET_TYPES.forEach(<span class="function"><span class="keyword">function</span>(<span class="params">type</span>) </span>&#123;</span><br><span class="line">  strats[type + <span class="string">'s'</span>] = mergeAssets</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> ASSET_TYPES = [<span class="string">'component'</span>, <span class="string">'directive'</span>, <span class="string">'filter'</span>]</span><br></pre></td></tr></table></figure>
+
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// parentVal</span></span><br><span class="line">components: &#123;</span><br><span class="line">  CompA,</span><br><span class="line">  CompB</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// childVal</span></span><br><span class="line">components: &#123;</span><br><span class="line">  CompC</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// after merge</span></span><br><span class="line">components: &#123;</span><br><span class="line">  CompC,</span><br><span class="line">  __proto__: &#123;</span><br><span class="line">  	CompA,</span><br><span class="line"> 		CompB,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="watch-选项的合并策略"><a href="#watch-选项的合并策略" class="headerlink" title="watch 选项的合并策略"></a><code>watch</code> 选项的合并策略</h3><p>下面查看<code>watch</code>选项的合并策略的代码，代码比较长，一段一段分析</p>
+<p>首先看最前面的两行代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">strats.watch = <span class="function"><span class="keyword">function</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parentVal: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  childVal: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  key: string</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): ?<span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="comment">// work around Firefox's Object.prototype.watch...</span></span><br><span class="line">  <span class="keyword">if</span> (parentVal === nativeWatch) parentVal = <span class="literal">undefined</span></span><br><span class="line">  <span class="keyword">if</span> (childVal === nativeWatch) childVal = <span class="literal">undefined</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先判断，这两个选项是否全等于<code>nativeWatch</code>，它是个什么呢？看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Firefox has a "watch" function on Object.prototype...</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> nativeWatch = &#123;&#125;.watch</span><br></pre></td></tr></table></figure>
+
+<p>通过注释和查阅资料得知，Firefox 浏览器会给每个对象的原型中添加<code>watch</code>属性，这样就和 Vue 里面的<code>watch</code>属性名称产生冲突。所以需要判断一下，当 Vue 的 <code>watch</code>属性和 FireFox 浏览器定义的<code>watch</code>的值相同时，会把<code>watch</code>设置为<code>undefined</code>。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* istanbul ignore if */</span></span><br><span class="line"><span class="keyword">if</span> (!childVal) <span class="keyword">return</span> <span class="built_in">Object</span>.create(parentVal || <span class="literal">null</span>)</span><br><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  assertObjectType(key, childVal, vm)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> (!parentVal) <span class="keyword">return</span> childVal</span><br></pre></td></tr></table></figure>
+
+<p>如果不存在<code>childVal</code>，则返回以<code>parentVal</code>或者<code>null</code>为原型创建的对象。</p>
+<p>在非生产环境中，还会判断下<code>childVal</code>的值是否是一个普通对象，如果不是会报错。</p>
+<p>如果不存在<code>parentVal</code>，则直接返回<code>childVal</code>。</p>
+<p>如果<code>childVal</code>和<code>parentVal</code>都存在，继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> ret = &#123;&#125;</span><br><span class="line">extend(ret, parentVal)</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> childVal) &#123;</span><br><span class="line">  <span class="keyword">let</span> parent = ret[key]</span><br><span class="line">  <span class="keyword">const</span> child = childVal[key]</span><br><span class="line">  <span class="keyword">if</span> (parent &amp;&amp; !<span class="built_in">Array</span>.isArray(parent)) &#123;</span><br><span class="line">    parent = [parent]</span><br><span class="line">  &#125;</span><br><span class="line">  ret[key] = parent</span><br><span class="line">    ? parent.concat(child)</span><br><span class="line">    : <span class="built_in">Array</span>.isArray(child)</span><br><span class="line">    ? child</span><br><span class="line">    : [child]</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> ret</span><br></pre></td></tr></table></figure>
+
+<p>先什么一个变量<code>ret</code>存储函数的返回值。然后把<code>parentVal</code>扩展到<code>ret</code>对象中，这样<code>ret</code>就拥有<code>parentVal</code>的全部属性。</p>
+<p>然后遍历<code>childVal</code>对象，声明一个变量<code>parent</code>存储<code>ret[key]</code>的值，<strong>注意</strong>这个值可能不存在。声明变量<code>child</code>存储<code>childVal[key]</code>的值，这个值是一定存在的。</p>
+<p>判断如果<code>parent</code>存在且不是数组时，把<code>parent</code>包装成一个数组。最后开始给<code>ret</code>赋值，它的<code>key</code>就是每次遍历<code>childVal</code>的<code>key</code>。在每次遍历的过程中，如果存在<code>parent</code>就把<code>child</code>合并到<code>parent</code>中组成新的数组。</p>
+<p>如果不存在<code>parent</code>，判断<code>child</code>是不是一个数组，如果是的话，就直接返回它本身；如果不是的话，把它包装成数组并返回。最后返回<code>ret</code>这个对象。</p>
+<p><strong>总结</strong>，<code>watch</code>的合并策略和其他的策略不同，它不会去除相同<code>key</code>的值，而是把它们的值组合在一起。也就是说如果有多个监听同一个值的函数，那么当这个值变化时，所有的监听函数都会生效。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// parentVal</span></span><br><span class="line">watch: &#123;</span><br><span class="line">  test: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'test parentVal'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// childVal</span></span><br><span class="line">watch: &#123;</span><br><span class="line">  test: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'test childVal'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// after merge</span></span><br><span class="line">watch: &#123;</span><br><span class="line">  test: [</span><br><span class="line">    <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    	<span class="built_in">console</span>.log(<span class="string">'test parentVal'</span>)</span><br><span class="line">  	&#125;,</span><br><span class="line">    <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    	<span class="built_in">console</span>.log(<span class="string">'test childVal'</span>)</span><br><span class="line">  	&#125;</span><br><span class="line">  ]</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// test change</span></span><br><span class="line">vm.test = <span class="number">2</span></span><br><span class="line"><span class="comment">// test parentVal</span></span><br><span class="line"><span class="comment">// test childVal</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="props、methods、inject、computed选项的合并策略"><a href="#props、methods、inject、computed选项的合并策略" class="headerlink" title="props、methods、inject、computed选项的合并策略"></a><code>props</code>、<code>methods</code>、<code>inject</code>、<code>computed</code>选项的合并策略</h3><p>看下面一段代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">strats.props = strats.methods = strats.inject = strats.computed = <span class="function"><span class="keyword">function</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parentVal: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  childVal: ?Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component,</span></span></span><br><span class="line"><span class="function"><span class="params">  key: string</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): ?<span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (childVal &amp;&amp; process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    assertObjectType(key, childVal, vm)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (!parentVal) <span class="keyword">return</span> childVal</span><br><span class="line">  <span class="keyword">const</span> ret = <span class="built_in">Object</span>.create(<span class="literal">null</span>)</span><br><span class="line">  extend(ret, parentVal)</span><br><span class="line">  <span class="keyword">if</span> (childVal) extend(ret, childVal)</span><br><span class="line">  <span class="keyword">return</span> ret</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这是对<code>props</code>、<code>methods</code>、<code>inject</code>、<code>computed</code>字段的合并选项的策略。</p>
+<p>代码逻辑比较简单。首先当<code>childVal</code>存在且在非生产环境中时，会判断<code>childVal</code>的值是否为普通对象，如果不是会报错。然后判断<code>parentVal</code>是否存在，如果不存在，则返回<code>childVal</code></p>
+<p>再声明一个没有原型的对象<code>ret</code>，使用<code>parentVal</code>扩展它。</p>
+<p>最后判断如果有<code>childVal</code>，也把<code>childVal</code>扩展到<code>ret</code>中；如果没有的话，直接返回<code>ret</code>。</p>
+<p><strong>小结</strong>，这个合并策略就是很简单的扩展，先创建一个没有原型的对象<code>ret</code>，先使用<code>parentVal</code>扩展给它，然后再使用<code>childVal</code>扩展它。如果选项中存在相同的<code>key</code>，后面的值会覆盖掉前面的值。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// parentVal</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: &#123;</span><br><span class="line">    type: <span class="built_in">String</span>,</span><br><span class="line">    <span class="keyword">default</span>: <span class="string">'Hale'</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;,</span><br><span class="line">methods: &#123;</span><br><span class="line">  fn1() &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'parentVal fn1'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// childVal</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: &#123;</span><br><span class="line">    type: <span class="built_in">String</span>,</span><br><span class="line">    <span class="keyword">default</span>: <span class="string">'Amy'</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;,</span><br><span class="line">methods: &#123;</span><br><span class="line">  fn2() &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'childVal fn2'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// after merge</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: &#123;</span><br><span class="line">    type: <span class="built_in">String</span>,</span><br><span class="line">    <span class="keyword">default</span>: <span class="string">'Amy'</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;,</span><br><span class="line">methods: &#123;</span><br><span class="line">  fn1() &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'parentVal fn1'</span>)</span><br><span class="line">  &#125;,</span><br><span class="line">  fn2() &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'childVal fn2'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="provide-选项的合并策略"><a href="#provide-选项的合并策略" class="headerlink" title="provide 选项的合并策略"></a><code>provide</code> 选项的合并策略</h3><p>看下<code>provide</code> 选项的合并策略的代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">strats.provide &#x3D; mergeDataOrFn</span><br></pre></td></tr></table></figure>
+
+<p><code>provide</code> 选项沿用了<code>data</code>选项的一样的合并策略，这里就不多赘述了。</p>
+<h3 id="extends和mixins的合并策略"><a href="#extends和mixins的合并策略" class="headerlink" title="extends和mixins的合并策略"></a><code>extends</code>和<code>mixins</code>的合并策略</h3><p>看下<code>extends</code>和<code>mixins</code>的合并策略。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!child._base) &#123;</span><br><span class="line">  <span class="keyword">if</span> (child.extends) &#123;</span><br><span class="line">    parent = mergeOptions(parent, child.extends, vm) <span class="comment">// ! 合并 extends</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (child.mixins) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, l = child.mixins.length; i &lt; l; i++) &#123;</span><br><span class="line">      parent = mergeOptions(parent, child.mixins[i], vm) <span class="comment">// ! 合并 mixins</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>讲解完成所有的合并策略后，再看<code>extends</code>和<code>mixins</code>的合并策略，这里在前面规范化的时候已经讲解过了。</p>
+<p>我们都知道<code>extends</code>和<code>mixins</code>选项的作用是复用组件代码，那么选项里面的值就可能是上面出现的所有选项字段，所以需要使用递归进行深度合并，然后再次沿用上面的合并策略。</p>
+<h2 id="合并策略总结"><a href="#合并策略总结" class="headerlink" title="合并策略总结"></a>合并策略总结</h2><p>所有的合并策略已经已经讲解完毕，下面进行总结。</p>
+<ul>
+<li>对于 <code>el</code>、<code>propsData</code> 选项使用默认的合并策略 <code>defaultStrat</code>。</li>
+<li>对于 <code>data</code> 选项，使用 <code>mergeDataOrFn</code> 函数进行处理，最终结果是 <code>data</code> 选项将变成一个新的函数，这个函数返回<code>mergeData</code>函数处理的数据，<code>mergeData</code>是真正合并选项的函数。</li>
+<li>对于 <code>生命周期钩子</code> 选项，将合并成数组，使得父子选项中的钩子函数都能够被执行。</li>
+<li>对于 <code>directives</code>、<code>filters</code> 和 <code>components</code> 资源选项，父子选项将以原型链的形式被处理，正是因为这样我们才能够在任何地方都使用内置组件、指令等。</li>
+<li>对于 <code>watch</code> 选项的合并处理，类似于生命周期钩子，如果父子选项都有相同的字段，把它们合并为数组，这样所有的观察者都将被执行。</li>
+<li>对于 <code>props</code>、<code>methods</code>、<code>inject</code>和<code>computed</code> 选项，父选项始终可用，但是子选项会覆盖同名的父选项字段。</li>
+<li>对于 <code>provide</code> 选项，其合并策略使用与 <code>data</code> 选项相同的 <code>mergeDataOrFn</code> 函数。</li>
+<li>最后，以上没有提及到的选项都将使默认选项 <code>defaultStrat</code>，只要子选项不是 <code>undefined</code>就使用子选项，否则使用父选项。</li>
+</ul>
+<h2 id="optionMergeStrategies-自定义合并策略"><a href="#optionMergeStrategies-自定义合并策略" class="headerlink" title="optionMergeStrategies 自定义合并策略"></a><code>optionMergeStrategies</code> 自定义合并策略</h2><p>Vue 在全局配置中还提供了一个可以自定义合并策略的选项<code>optionMergeStrategies</code>，让用户可以为一些非系统选项字段提供自定义的合并策略，而不是使用默认的合并策略。</p>
+<p>比如为自定义字段<code>customOption</code>的提供自定义的合并策略``optionMergeStrategies`。</p>
+<p>示例代码如下，现在在入口文件<code>main.js</code>中配置合并策略</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Vue.config.optionMergeStrategies.customOption = <span class="function"><span class="keyword">function</span>(<span class="params">parent, child, vm</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> parent ? parent + child : child</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后在实例组件中使用这个自定义的字段<code>customOption</code></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  customOption: <span class="number">2</span>,</span><br><span class="line">  extends: &#123;</span><br><span class="line">    customOption: <span class="number">1</span></span><br><span class="line">  &#125;,</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      a: <span class="number">0</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  created() &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="keyword">this</span>.$options.customOption) <span class="comment">// 3</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="options-合并后选项的使用"><a href="#options-合并后选项的使用" class="headerlink" title="$options 合并后选项的使用"></a><code>$options</code> 合并后选项的使用</h3><p>使用<code>mergeOptions</code>后会返回一个对象，这个对象就是合并后的选项，在实例化中会把这个对象赋值给实例的<code>$options</code>属性。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vm.$options = mergeOptions(</span><br><span class="line">  resolveConstructorOptions(vm.constructor), <span class="comment">// ! Vue 初始化时的默认选项,比如默认的指令和组件等等</span></span><br><span class="line">  options || &#123;&#125;, <span class="comment">// ! 用户传入的配置</span></span><br><span class="line">  vm <span class="comment">// !  Vue 实例对象本身</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p><code>vm.$options</code>这个属性<strong>非常重要</strong>，在接下来设置其他的实例属性时<strong>至关重要</strong>，因为都会用到它。</p>
+<p>在实例组件中也可以调用这个属性去拿到合并后的选项，包括我们自己输入的选项，这样我们可以更好的编写组件。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  name: <span class="string">'Home'</span>,</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      a: <span class="number">0</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  methods: &#123;</span><br><span class="line">    test() &#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'test method'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  created() &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="keyword">this</span>.$options.name) <span class="comment">// 'Home'</span></span><br><span class="line">    <span class="built_in">console</span>.log(<span class="keyword">this</span>.$options.methods.test) <span class="comment">// function test() &#123; console.log('test method') 	&#125;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190902-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E7%AD%96%E7%95%A5/" title="Vue2源码学习笔记之选项合并的策略">https://haledeng.com/blog/20190902-Vue2源码学习笔记之选项合并的策略/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190830-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E8%A7%84%E8%8C%83%E5%8C%96/" rel="prev" title="Vue2源码学习笔记之选项合并的规范化">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之选项合并的规范化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190906-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%AE%9E%E4%BE%8B%E5%8C%96/" rel="next" title="Vue2源码学习笔记之实例化">
+      Vue2源码学习笔记之实例化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#mergeField"><span class="nav-number">1.</span> <span class="nav-text">mergeField</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#strats"><span class="nav-number">2.</span> <span class="nav-text">strats</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#defaultStrat"><span class="nav-number">2.1.</span> <span class="nav-text">defaultStrat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#data-选项的合并策略"><span class="nav-number">2.2.</span> <span class="nav-text">data 选项的合并策略</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#mergeDataOrFn"><span class="nav-number">2.2.1.</span> <span class="nav-text">mergeDataOrFn</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mergeHook-生命周期函数的合并策略"><span class="nav-number">2.3.</span> <span class="nav-text">mergeHook 生命周期函数的合并策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mergeAssets-资源选项的合并策略"><span class="nav-number">2.4.</span> <span class="nav-text">mergeAssets 资源选项的合并策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#watch-选项的合并策略"><span class="nav-number">2.5.</span> <span class="nav-text">watch 选项的合并策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#props、methods、inject、computed选项的合并策略"><span class="nav-number">2.6.</span> <span class="nav-text">props、methods、inject、computed选项的合并策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#provide-选项的合并策略"><span class="nav-number">2.7.</span> <span class="nav-text">provide 选项的合并策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#extends和mixins的合并策略"><span class="nav-number">2.8.</span> <span class="nav-text">extends和mixins的合并策略</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合并策略总结"><span class="nav-number">3.</span> <span class="nav-text">合并策略总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#optionMergeStrategies-自定义合并策略"><span class="nav-number">4.</span> <span class="nav-text">optionMergeStrategies 自定义合并策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#options-合并后选项的使用"><span class="nav-number">4.1.</span> <span class="nav-text">$options 合并后选项的使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

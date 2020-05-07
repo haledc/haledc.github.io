@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="讲解完对象的响应式定义后，再看下数组的响应式定义，回到Observer的构造函数中，看下面的代码。 1234567891011if (Array.isArray(value)) &amp;#123;  &#x2F;&#x2F; ! 判断当前环境的对象中是否有 __proto__ 属性 （是否支持使用 __proto__）  if (hasProto) &amp;#123;    protoAugment(value, arrayMe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之数组的响应性">
+<meta property="og:url" content="https://haledeng.com/blog/20190915-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E6%95%B0%E7%BB%84%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="讲解完对象的响应式定义后，再看下数组的响应式定义，回到Observer的构造函数中，看下面的代码。 1234567891011if (Array.isArray(value)) &amp;#123;  &#x2F;&#x2F; ! 判断当前环境的对象中是否有 __proto__ 属性 （是否支持使用 __proto__）  if (hasProto) &amp;#123;    protoAugment(value, arrayMe">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-15T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:57:52.260Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190915-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E6%95%B0%E7%BB%84%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之数组的响应性 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190915-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E6%95%B0%E7%BB%84%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之数组的响应性
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-15 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-15T20:00:00+08:00">2019-09-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>6.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>讲解完对象的响应式定义后，再看下数组的响应式定义，回到<code>Observer</code>的构造函数中，看下面的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(value)) &#123;</span><br><span class="line">  <span class="comment">// ! 判断当前环境的对象中是否有 __proto__ 属性 （是否支持使用 __proto__）</span></span><br><span class="line">  <span class="keyword">if</span> (hasProto) &#123;</span><br><span class="line">    protoAugment(value, arrayMethods)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    copyAugment(value, arrayMethods, arrayKeys)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.observeArray(value) <span class="comment">// ! 再次监听数组，监听一些嵌套的数组</span></span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>if</code>代码块中定义了数组响应式，首先判断宿主环境中是否存在<code>__proto__</code>属性，这个属性是对象的隐式原型对象，只有在 IE 11 以上的浏览器才会支持。</p>
+<p>如果宿主环境支持<code>__proto__</code>，调用<code>protoAugment</code>函数并传入数组类型的<code>value</code>和<code>arrayMethods</code>这两个值作为参数。</p>
+<a id="more"></a>
+
+<h2 id="arrayMethods"><a href="#arrayMethods" class="headerlink" title="arrayMethods"></a><code>arrayMethods</code></h2><p>先不急着看<code>protoAugment</code>函数，先看下第二个参数<code>arrayMethods</code>是什么，在<code>core/observer/array.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> arrayProto = <span class="built_in">Array</span>.prototype <span class="comment">// ! 数组原型</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> arrayMethods = <span class="built_in">Object</span>.create(arrayProto) <span class="comment">// ! 通过数组原型创建的对象</span></span><br></pre></td></tr></table></figure>
+
+<p><code>arrayMethods</code>是根据数组的原型对象创建传来的对象。但是还没完？继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> methodsToPatch = [</span><br><span class="line">  <span class="string">'push'</span>,</span><br><span class="line">  <span class="string">'pop'</span>,</span><br><span class="line">  <span class="string">'shift'</span>,</span><br><span class="line">  <span class="string">'unshift'</span>,</span><br><span class="line">  <span class="string">'splice'</span>,</span><br><span class="line">  <span class="string">'sort'</span>,</span><br><span class="line">  <span class="string">'reverse'</span></span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">methodsToPatch.forEach(<span class="function"><span class="keyword">function</span>(<span class="params">method</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// cache original method</span></span><br><span class="line">  <span class="keyword">const</span> original = arrayProto[method] <span class="comment">// ! 原生方法</span></span><br><span class="line">  def(arrayMethods, method, <span class="function"><span class="keyword">function</span> <span class="title">mutator</span>(<span class="params">...args</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> result = original.apply(<span class="keyword">this</span>, args) <span class="comment">// ! 原生方法调用生成的值，也是返回值</span></span><br><span class="line">    <span class="keyword">const</span> ob = <span class="keyword">this</span>.__ob__</span><br><span class="line">    <span class="keyword">let</span> inserted <span class="comment">// ! 数组新增的值, 数组类型</span></span><br><span class="line">    <span class="keyword">switch</span> (method) &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'push'</span>:</span><br><span class="line">      <span class="keyword">case</span> <span class="string">'unshift'</span>:</span><br><span class="line">        inserted = args</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">      <span class="keyword">case</span> <span class="string">'splice'</span>:</span><br><span class="line">        inserted = args.slice(<span class="number">2</span>) <span class="comment">// ! 获取传入参数的第三个参数以后的值所有值，即新增的值</span></span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (inserted) ob.observeArray(inserted) <span class="comment">// ! 监听新增的值，使其成为响应式</span></span><br><span class="line">    <span class="comment">// notify change</span></span><br><span class="line">    ob.dep.notify() <span class="comment">// ! 手动触发依赖通知</span></span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><code>methodsToPatch</code>是一些数组常用方法名（字符串类型）组成的数组，通过这些方法可以操作数组中元素的增加、删除或者移位。</p>
+<p>再看下面的代码，遍历<code>methodsToPatch</code>，然后重写<code>arrayMethods</code>对象中的某些方法，这些方法就是在<code>methodsToPatch</code>里面的方法。</p>
+<p>先看遍历函数中的第一行代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> original = arrayProto[method] <span class="comment">// ! 原生方法</span></span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>original</code>存储数组原型的原生方法。</p>
+<p>继续往下看</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">def(arrayMethods, method, <span class="function"><span class="keyword">function</span> <span class="title">mutator</span>(<span class="params">...args</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来调用<code>def</code>函数重写<code>arrayMethods</code>对象中的方法。</p>
+<p>看下<code>def</code>的第三个参数<code>val</code>，它现在是一个函数，看这个函数第一行和最后一行的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> result = original.apply(<span class="keyword">this</span>, args) <span class="comment">// ! 调用原生方法生成值，也是返回值</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> result</span><br></pre></td></tr></table></figure>
+
+<p>传入参数并使用原生方法生成值，然后在最后返回这个值，这样就相当于继承了原生方法。</p>
+<p>然后在中间处理了一些事情，现在看中间的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> ob = <span class="keyword">this</span>.__ob__ <span class="comment">// ! this 指向数组本身</span></span><br><span class="line"><span class="keyword">let</span> inserted <span class="comment">// ! 数组新增的值, 数组类型</span></span><br><span class="line"><span class="keyword">switch</span> (method) &#123;</span><br><span class="line">  <span class="keyword">case</span> <span class="string">'push'</span>:</span><br><span class="line">  <span class="keyword">case</span> <span class="string">'unshift'</span>:</span><br><span class="line">    inserted = args</span><br><span class="line">    <span class="keyword">break</span></span><br><span class="line">  <span class="keyword">case</span> <span class="string">'splice'</span>:</span><br><span class="line">    inserted = args.slice(<span class="number">2</span>) <span class="comment">// ! 获取传入参数的第三个参数以后的值所有值，即新增的值</span></span><br><span class="line">    <span class="keyword">break</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> (inserted) ob.observeArray(inserted) <span class="comment">// ! 监听新增的值，使其成为响应式</span></span><br><span class="line"><span class="comment">// notify change</span></span><br><span class="line">ob.dep.notify() <span class="comment">// ! 手动触发依赖通知</span></span><br></pre></td></tr></table></figure>
+
+<p>首先声明常量<code>ob</code>存储<code>this.__ob__</code>的值，<code>this</code>指向数组本身。我们都知道在初始化<code>data</code>选项时，会使用<code>observe</code>函数监听<code>data</code>选项，然后在<code>data</code>里面添加一个<code>__ob__</code>属性，这个属性存储了<code>Observer</code>实例本身。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">def(value, <span class="string">'__ob__'</span>, <span class="keyword">this</span>)</span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码，声明了一个<code>inserted</code>变量，这个变量存储着数组新增的值，它是一个数组。</p>
+<p>再使用<code>switch</code>函数匹配不同方法增加的值，比如<code>push</code>和<code>unshift</code>增加的值，就是传入的参数，可以是一个参数，也可以是多个参数，这时直接赋值。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> arr = []</span><br><span class="line">arr.push(<span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">arr.unshift(<span class="number">5</span>)</span><br><span class="line"><span class="built_in">console</span>.log(arr) <span class="comment">// [ 5, 1, 2 ]</span></span><br><span class="line"></span><br><span class="line">arr.splice(<span class="number">1</span>, <span class="number">0</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>)</span><br><span class="line"><span class="built_in">console</span>.log(arr) <span class="comment">// [ 5, 4, 5, 6, 1, 2 ]</span></span><br></pre></td></tr></table></figure>
+
+<p>但是<code>splice</code>方法比较特殊，通过这个方法新增的值是从第三个参数开始的。所以使用<code>slice</code>方法从第三个参数开始截取参数数组。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">inserted = args.slice(<span class="number">2</span>) <span class="comment">// ! 获取传入参数的第三个参数以后的所有值，即新增的值</span></span><br></pre></td></tr></table></figure>
+
+<p>所以<code>inserted</code>设置成一个数组是比较合理的，因为数组增加元素时，有可能一下子增加好几个元素。</p>
+<p>新增元素后，还需要把增加的元素变成响应式数据，因为增加元素的是数组，不能自动使用<code>Object.defineProperty</code>定义元素，需要使用<code>observeArray</code>方法把它们变成响应式数据。</p>
+<p>看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (inserted) ob.observeArray(inserted) <span class="comment">// ! 监听新增的值，使其成为响应式</span></span><br></pre></td></tr></table></figure>
+
+<p>调用<code>ob</code>中的<code>observeArray</code>把他们变成响应式的。<code>ob</code>是<code>Observer</code>的实例对象，在前面我们知道类<code>Observer</code>有两个方法，前面已经讲解了<code>walk</code>方法，现在讲解另外一个方法，就是刚才调用的``observeArray`方法，下面看这个方法的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">observeArray(items: <span class="built_in">Array</span>&lt;any&gt;) &#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, l = items.length; i &lt; l; i++) &#123;</span><br><span class="line">    observe(items[i])</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法很简单，就是遍历传入的数组，然后通过<code>observe</code>函数监听数组中的每一个元素，使它们都成为响应式数据。</p>
+<p>当然，最后还需要手动触发依赖。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ob.dep.notify() <span class="comment">// ! 手动通知，触发依赖</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>注意</strong>这里不只是新增加值需要手动触发依赖，其他的操作比如删除元素、移动元素也是需要手动触发依赖的。因为数组类型的数据没法使用<code>Object.defineProperty</code>这个 API 来监听数据的变化，自动触发依赖。</p>
+<h2 id="protoAugment"><a href="#protoAugment" class="headerlink" title="protoAugment"></a><code>protoAugment</code></h2><p>继续回到类<code>Observer</code>的构造函数中，如果宿主环境支持<code>__proto__</code>时，调用<code>protoAugment</code>方法并把``value<code>和</code>arrayMethods`作为参数传入。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (hasProto) &#123;</span><br><span class="line">  protoAugment(value, arrayMethods)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  copyAugment(value, arrayMethods, arrayKeys)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">this</span>.observeArray(value) <span class="comment">// ! 再次监听数组，监听一些嵌套的数组</span></span><br></pre></td></tr></table></figure>
+
+<p>了解第二个参数<code>arrayMethods</code>对象后，现在可以参看<code>protoAugment</code>函数的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">protoAugment</span>(<span class="params">target, src: Object</span>) </span>&#123;</span><br><span class="line">  <span class="comment">/* eslint-disable no-proto */</span></span><br><span class="line">  target.__proto__ = src</span><br><span class="line">  <span class="comment">/* eslint-enable no-proto */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法接收两个参数<code>target</code>和<code>src</code>，也就是上面传入的<code>value</code>和<code>arrayMethods</code>，然后用<code>__proto__</code>把它们连接起来。</p>
+<p>使用<code>protoAugment</code>函数把<code>value</code>和<code>arrayMethods</code>通过原型连接起来，这样数组类型的监听对象<code>value</code>也继承了<code>arrayMethods</code>对象的变异方法（重写的方法），在数组增加元素的时候也可以使增加的元素变成响应式数据，还能触发<code>value</code>中依赖的更新。</p>
+<h2 id="copyAugment"><a href="#copyAugment" class="headerlink" title="copyAugment"></a><code>copyAugment</code></h2><p>接下来看下在不支持<code>__proto__</code>的宿主环境中，是如何处理数组类型的数据。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">copyAugment(value, arrayMethods, arrayKeys)</span><br></pre></td></tr></table></figure>
+
+<p>使用了<code>copyAugment</code>函数，这个函数比<code>protoAugment</code>多传入了一个参数，现在看下多出来的第三个参数<code>arrayKeys</code>是什么样子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> arrayKeys = <span class="built_in">Object</span>.getOwnPropertyNames(arrayMethods)</span><br></pre></td></tr></table></figure>
+
+<p>原来是获取<code>arrayMethods</code>对象中所有属于自身的属性名，即<code>key</code>值（不是原型链上的方法）。</p>
+<p>它应该是下面这个样子。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> arrayMethods = [</span><br><span class="line">  <span class="string">'push'</span>,</span><br><span class="line">  <span class="string">'pop'</span>,</span><br><span class="line">  <span class="string">'shift'</span>,</span><br><span class="line">  <span class="string">'unshift'</span>,</span><br><span class="line">  <span class="string">'splice'</span>,</span><br><span class="line">  <span class="string">'sort'</span>,</span><br><span class="line">  <span class="string">'reverse'</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>现在看下<code>copyAugment</code>函数的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">copyAugment</span>(<span class="params">target: Object, src: Object, keys: Array&lt;string&gt;</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, l = keys.length; i &lt; l; i++) &#123;</span><br><span class="line">    <span class="keyword">const</span> key = keys[i]</span><br><span class="line">    def(target, key, src[key])</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因为不能使用隐式原型对象<code>__proto__</code>连接<code>target</code>和<code>src</code>。</p>
+<p>这里重定义的方法，遍历<code>keyskeys</code>，在每次循环时，获取到<code>key</code>值，就是那些常用的数组方法。然后使用<code>def</code>函数重写<code>target</code>中的这些方法，让它们变成<code>src</code>对象，也就是传入的<code>arrayMethods</code>对象的变异方法。</p>
+<p>这样就和上面的原型继承达到相同的目的，即数组类型的数据在修改数据时，也能触发依赖，然后数据更新，并且会把数组中新增的元素变成响应式数据。</p>
+<p>接下来看最后一行代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.observeArray(value) <span class="comment">// ! 再次监听数组，监听一些嵌套的数组</span></span><br></pre></td></tr></table></figure>
+
+<p>使用<code>observeArray</code>方法监听<code>value</code>值，主要是防止数组类型数据里面还存在着数组，也就是嵌套数组，把嵌套数组里面的元素也变成响应式数据。</p>
+<h2 id="dependArray"><a href="#dependArray" class="headerlink" title="dependArray"></a><code>dependArray</code></h2><p>把数组类型的数据变成响应式数据过程我们已经了解了，现在看下数组类型的数据是怎么收集依赖的。</p>
+<p>在<code>defineReactive</code>函数定义<code>getter</code>的时候，有以下代码，在<code>core/observer/index.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (Dep.target) &#123;</span><br><span class="line">  dep.depend() <span class="comment">// ! 添加进订阅器，依赖收集</span></span><br><span class="line">  <span class="keyword">if</span> (childOb) &#123;</span><br><span class="line">    childOb.dep.depend() <span class="comment">// ! 依赖收集</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(value)) &#123;</span><br><span class="line">      dependArray(value) <span class="comment">// ! 数组手动收集依赖</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断下<code>value</code>的值是否是数组，如果是数组，调用<code>dependArray</code>函数收集依赖。</p>
+<p>先看下<code>dependArray</code>函数的代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">dependArray</span>(<span class="params">value: Array&lt;any&gt;</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> e, i = <span class="number">0</span>, l = value.length; i &lt; l; i++) &#123;</span><br><span class="line">    e = value[i]</span><br><span class="line">    e &amp;&amp; e.__ob__ &amp;&amp; e.__ob__.dep.depend() <span class="comment">// ! 依赖收集</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(e)) &#123;</span><br><span class="line">      dependArray(e) <span class="comment">// ！递归调用</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>它的逻辑很简单，遍历数组的值，然后调用它的<code>ob</code>进行依赖收集，如果这个值还是一个数组，递归调用这个函数。</p>
+<p>因为数组的结构和对象不同，<strong><code>Object.defineProperty</code>这个属性有局限性，它只能定义对象<code>key</code>的值，而无法定义数组索引的值</strong>，也就是说无法给数组里面的元素添加<code>getter</code>属性。当读取数组中的值时，也就不会触发<code>getter</code>函数自动取收集依赖，所以需要<strong>手动收集依赖</strong>。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>首先虽然我们可以给数组中添加<code>__ob__</code>属性，不能使用<code>Object.defineProperty</code>来定义数组中是索引值，因为<code>Object.defineProperty</code>的<strong>局限性</strong>，它只支持对象而不支持数组。Vue 3.0 中使用<code>Proxy</code>就不会发生这种情况。</p>
+<p>也就是说数组里面的元素，没有属性描述符，也没有<code>getter</code>和<code>setter</code>，即不能自动收集依赖和触发依赖。既然不能自动，那就手动呗。</p>
+<p>在<code>gettter</code>中，使用<code>dependArray</code>函数手动收集数组的依赖。</p>
+<p>然后把数组类型的属性通过原型链连接<code>arrayMethods</code>来继承<code>arrayMethods</code>重写的一些变异方法；或者通过重新定义的方法，把数组类型的属性一些方法替换成<code>arrayMethods</code>的变异方法。</p>
+<p>这样数组使用这些方法时，就会执行变异方法中我们设置的逻辑，这相当于对象类型的<code>key</code>触发<code>setter</code>一样，数组中的元素也能触发依赖，更新视图，然后对于数组新增的元素，也会把它们变成响应式数据。</p>
+<h2 id="vmCount"><a href="#vmCount" class="headerlink" title="vmCount"></a><code>vmCount</code></h2><p>到这样已经完全讲解了<code>Observer</code>构造函数，然后我们再次回到<code>observer</code>函数中，这个函数还剩下最后一点代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 对象是根实例数据对象时， vmCount++</span></span><br><span class="line"><span class="keyword">if</span> (asRootData &amp;&amp; ob) &#123;</span><br><span class="line">  ob.vmCount++</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> ob</span><br></pre></td></tr></table></figure>
+
+<p>还记得<code>initData</code>在初始化<code>data</code>选项时的最后一行代码嘛</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// observe data</span></span><br><span class="line">observe(data, <span class="literal">true</span> <span class="comment">/* asRootData */</span>) <span class="comment">// ! 把 data 上的属性变成响应式的</span></span><br></pre></td></tr></table></figure>
+
+<p>使用<code>observe</code>函数时传入了第二个参数<code>asRootData</code>，它的值为<code>true</code>，说明最开始初始化的<code>data</code>是根组件的数据。</p>
+<p>然后我们发现在后面监听数据时，一般都不会传入第二个参数，它的值就是默认值<code>undefined</code>，转换成布尔值就是<code>false</code>，说明监听的数据不是根组件数据。</p>
+<p>回到下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (asRootData &amp;&amp; ob) &#123;</span><br><span class="line">  ob.vmCount++</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> ob</span><br></pre></td></tr></table></figure>
+
+<p>只有在根组件且监听根组件数据时，<code>ob.vmCount</code>的值是递增的，而<code>ob.vmCount</code>在类<code>Observer</code>的构造函数中声明的初始值是<code>0</code>，所以根组件的数据<code>ob.vmCount</code>的值永远是大于<code>0</code>的，<code>observe</code>函数最后返回<code>ob</code>实例。</p>
+<p>那么是不是可以这样理解，只要是根组件数据，那么它的<code>__ob__</code>中的<code>vmCount</code>就大于<code>0</code>。这样的话，就可以通过判断<code>ob.vmCount</code>的值是否大于<code>0</code>来确定组件是不是根组件，或者监听的数据是不是根组件数据了。</p>
+<p><strong>为什么要专门区分根组件数据和非根组件数据呢</strong>？它们之间有什么区别吗？</p>
+<p>因为一开始在初始化根数据之前，根数据<code>data</code>是非响应式的，这时候如果使用<code>Vue.set</code>或者<code>vm.$set</code>为<code>data</code>选项里面的对象添加值是不可能成功的，因为<code>Vue.set</code>或者<code>vm.$set</code>只能为响应式对象添加属性。</p>
+<p>只有当<code>data</code>数据被观察者依赖时，才能收集依赖到订阅器中，这样之后才能使用<code>Vue.set</code>或者<code>vm.$set</code>为<code>data</code>添加属性。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190915-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E6%95%B0%E7%BB%84%E7%9A%84%E5%93%8D%E5%BA%94%E5%BC%8F/" title="Vue2源码学习笔记之数组的响应性">https://haledeng.com/blog/20190915-Vue2源码学习笔记之数组的响应式/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190912-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%93%8D%E5%BA%94%E5%BC%8F%E5%AE%9A%E4%B9%89/" rel="prev" title="Vue2源码学习笔记之响应式定义">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之响应式定义
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190917-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BSet%E5%92%8CDel/" rel="next" title="Vue2源码学习笔记之Set和Del">
+      Vue2源码学习笔记之Set和Del <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#arrayMethods"><span class="nav-number">1.</span> <span class="nav-text">arrayMethods</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#protoAugment"><span class="nav-number">2.</span> <span class="nav-text">protoAugment</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#copyAugment"><span class="nav-number">3.</span> <span class="nav-text">copyAugment</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dependArray"><span class="nav-number">4.</span> <span class="nav-text">dependArray</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vmCount"><span class="nav-number">6.</span> <span class="nav-text">vmCount</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

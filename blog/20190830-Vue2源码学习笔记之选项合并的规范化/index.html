@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="我们在使用new创建 Vue 的实例对象时，必定传入一个参数对象options进去，这个参数对象其实就是 Vue 的选项options。比如在 Vue 项目的入口文件中 1234567&#x2F;&#x2F; main.jsconst vm &#x3D; new Vue(&amp;#123;  el: &#39;#app&#39;,  router,  store,  render: h &#x3D;&gt; h(App)&amp;#125;)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之选项合并的规范化">
+<meta property="og:url" content="https://haledeng.com/blog/20190830-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E8%A7%84%E8%8C%83%E5%8C%96/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="我们在使用new创建 Vue 的实例对象时，必定传入一个参数对象options进去，这个参数对象其实就是 Vue 的选项options。比如在 Vue 项目的入口文件中 1234567&#x2F;&#x2F; main.jsconst vm &#x3D; new Vue(&amp;#123;  el: &#39;#app&#39;,  router,  store,  render: h &#x3D;&gt; h(App)&amp;#125;)">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-08-30T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:56:14.777Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190830-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E8%A7%84%E8%8C%83%E5%8C%96/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之选项合并的规范化 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190830-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E8%A7%84%E8%8C%83%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之选项合并的规范化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-08-30 20:00:00" itemprop="dateCreated datePublished" datetime="2019-08-30T20:00:00+08:00">2019-08-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>20k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>18 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>我们在使用<code>new</code>创建 Vue 的实例对象时，必定传入一个参数对象<code>options</code>进去，这个参数对象其实就是 Vue 的选项<code>options</code>。比如在 Vue 项目的入口文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// main.js</span></span><br><span class="line"><span class="keyword">const</span> vm = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">  el: <span class="string">'#app'</span>,</span><br><span class="line">  router,</span><br><span class="line">  store,</span><br><span class="line">  render: <span class="function"><span class="params">h</span> =&gt;</span> h(App)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<p>另外，创建每一个组件时，在<code>script</code>中也会导出一个对象，例如</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;template&gt;</span><br><span class="line">  &lt;!-- 省略模板代码 --&gt;</span><br><span class="line">&lt;&#x2F;template&gt;</span><br><span class="line"></span><br><span class="line">&lt;script&gt;</span><br><span class="line">export default &#123;</span><br><span class="line">  props: &#123;&#125;,</span><br><span class="line">  data() &#123;</span><br><span class="line">    return &#123;&#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  computed: &#123;&#125;,</span><br><span class="line">  methods: &#123;&#125;</span><br><span class="line">  &#x2F;&#x2F; ...</span><br><span class="line">&#125;</span><br><span class="line">&lt;&#x2F;script&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这个对象也是用户输入的<code>options</code>，项目入口文件有<code>options</code>，组件也有<code>options</code>，再加上 Vue 本身也自带<code>options</code>，这么多的<code>options</code>看起来非常乱，所以需要合并选项。</p>
+<p>在初始化实例的方法<code>_init</code>中，使用了<code>mergeOptions</code>方法合并选项。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (options &amp;&amp; options._isComponent) &#123;</span><br><span class="line">  <span class="comment">// optimize internal component instantiation</span></span><br><span class="line">  <span class="comment">// since dynamic options merging is pretty slow, and none of the</span></span><br><span class="line">  <span class="comment">// internal component options needs special treatment.</span></span><br><span class="line">  initInternalComponent(vm, options)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// ! 合并配置</span></span><br><span class="line">  vm.$options = mergeOptions(</span><br><span class="line">    resolveConstructorOptions(vm.constructor), <span class="comment">// ! Vue 初始化时的默认选项,比如默认的指令和组件等等</span></span><br><span class="line">    options || &#123;&#125;, <span class="comment">// ! 用户传入的配置</span></span><br><span class="line">    vm <span class="comment">// !  Vue 实例对象本身</span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用<code>mergeOptions</code>方法传入了三个参数，分别是默认选项、用户选项以及实例对象本身。</p>
+<p>第一个参数是默认选项，通过调用<code>resolveConstructorOptions</code>函数时传入<code>vm.constructor</code>参数来获取的。</p>
+<h2 id="resolveConstructorOptions"><a href="#resolveConstructorOptions" class="headerlink" title="resolveConstructorOptions"></a><code>resolveConstructorOptions</code></h2><p>先看下<code>resolveConstructorOptions</code>函数的代码，从函数名可以看出这个函数的作用应该是解析构造函数的选项的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">resolveConstructorOptions</span>(<span class="params">Ctor: Class&lt;Component&gt;</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> options = Ctor.options</span><br><span class="line">  <span class="keyword">if</span> (Ctor.super) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> options</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数传入的参数是<code>vm.constructor</code>，即实例对象的构造函数，也就是<code>Vue</code>。</p>
+<p>先声明变量<code>options</code>存储构造函数的<code>options</code>，然后下面是一个条件语言，如果存在<code>Ctor.super</code>属性，就会执行后面的代码。这个<code>super</code>的属性到底是什么呢？</p>
+<p>如果我们使用了 Vue 的全局方法<code>extend</code>创建一个子类，再通过这个子类创建一个实例对象，那么这个实例对象的<code>constructor</code>就是这个子类。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Sub = Vue.extend() <span class="comment">// 子类</span></span><br><span class="line"><span class="keyword">const</span> s = <span class="keyword">new</span> Sub() <span class="comment">// 子类生成的实例对象</span></span><br></pre></td></tr></table></figure>
+
+<p>通过<code>extend</code>创建的子类会有一个特性的属性<code>super</code>，它的值一般就是 Vue 的构造函数。</p>
+<p>因为这里是 Vue 的实例初始化的过程，所以传入的参数<code>Ctor</code>就是 Vue 的构造函数，而不是子类，也不可能有<code>super</code>属性，所以函数的<code>if</code>的代码块是不会执行的。</p>
+<p>在实例对象创建的过程中，这个函数就可以简化为</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">resolveConstructorOptions</span>(<span class="params">Ctor: Class&lt;Component&gt;</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> options = Ctor.options</span><br><span class="line">  <span class="keyword">return</span> options</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数最后返回<code>Ctor.options</code>，即<code>Vue</code>的默认选项<code>options</code>。它现在应该是下面这个样子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Vue.options = &#123;</span><br><span class="line">	components: &#123;</span><br><span class="line">		KeepAlive</span><br><span class="line">		Transition,</span><br><span class="line">    	TransitionGroup</span><br><span class="line">	&#125;,</span><br><span class="line">	directives:&#123;</span><br><span class="line">	    model,</span><br><span class="line">        show</span><br><span class="line">	&#125;,</span><br><span class="line">	filters: <span class="built_in">Object</span>.create(<span class="literal">null</span>),</span><br><span class="line">	_base: Vue</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这些选项都是在扩展 Vue 的构造函数和平台化包装时添加到 Vue 的构造函数的<code>options</code>属性中的。</p>
+<p><code>mergeOptions</code>函数传入的第二个参数<code>options</code>是用户输入的，在 Vue 项目的入口文件中，使用<code>new</code>创建 Vue 的实例并传入选项配置，传入的选项可能是下面这个样子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  el: <span class="string">'#app'</span>,</span><br><span class="line">  data: &#123;</span><br><span class="line">    a: <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>mergeOptions</code>函数传入的最后一个参数<code>vm</code>，这是实例对象本身。</p>
+<h2 id="mergeOptions"><a href="#mergeOptions" class="headerlink" title="mergeOptions"></a><code>mergeOptions</code></h2><h3 id="checkComponents"><a href="#checkComponents" class="headerlink" title="checkComponents"></a><code>checkComponents</code></h3><p>分析函数调用时的参数后，接下来看下<code>mergeOptions</code>函数的代码，在<code>core/util/options.js</code>文件中</p>
+<p>函数代码比较长，先看前面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">mergeOptions</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parent: Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  child: Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    checkComponents(child)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先查看函数的参数，参数分别是<code>parent</code>、<code>child</code>和<code>vm</code>。在实例初始化调用函数的，<code>parent</code>就是默认选项配置，<code>child</code>是用户输入的选项配置，<code>vm</code>是实例对象。</p>
+<p>再看函数体代码，在非生产环境中，会调用<code>checkComponents</code>函数检查一下<code>child</code>选项，这里主要校验选项的<code>components</code>属性中的各个组件名。</p>
+<p>我们在组件中引入另外一个组件时，都需要注册引入的这个组件，注册是把组件放入到<code>components</code>选项中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> CompA <span class="keyword">from</span> <span class="string">'../components/CompA'</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  components: &#123; CompA &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面看下<code>checkComponents</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">checkComponents</span>(<span class="params">options: Object</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> options.components) &#123;</span><br><span class="line">    validateComponentName(key)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数中遍历<code>components</code>选项中的元素，再使用<code>validateComponentName</code>函数检查下选项中的<code>name</code>是否符合要求。<code>name</code>就是<code>components</code>对象中<code>key</code>的值。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">validateComponentName</span>(<span class="params">name: string</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (</span><br><span class="line">    !<span class="keyword">new</span> <span class="built_in">RegExp</span>(<span class="string">`^[a-zA-Z][\\-\\.0-9_<span class="subst">$&#123;unicodeRegExp.source&#125;</span>]*$`</span>).test(name)</span><br><span class="line">  ) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'Invalid component name: "'</span> +</span><br><span class="line">        name +</span><br><span class="line">        <span class="string">'". Component names '</span> +</span><br><span class="line">        <span class="string">'should conform to valid custom element name in html5 specification.'</span></span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (isBuiltInTag(name) || config.isReservedTag(name)) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'Do not use built-in or reserved HTML elements as component '</span> +</span><br><span class="line">        <span class="string">'id: '</span> +</span><br><span class="line">        name</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用了两个<code>if</code>来判断<code>name</code>的值是否符合要求，也就是需要同时符合这两个条件才不会报错。</p>
+<ol>
+<li><p>满足正则表达式<code>new RegExp(<code>^[a-zA-Z][\\-\\.0-9_${unicodeRegExp.source}]*$</code>)</code></p>
+</li>
+<li><p>满足条件<code>isBuiltInTag(name) || config.isReservedTag(name)</code></p>
+</li>
+</ol>
+<p>对于第一条，<code>name</code>的值的开头必须由字符组成，后面可以是<code>-</code>符或者<code>.</code>符或者数字以及特殊字符。</p>
+<p>对于第二条，<code>name</code>的值不能是 Vue 内置的组件名比如<code>slot</code>、<code>componnet</code>或者是保留的 HTML 标签名。</p>
+<p><code>isBuiltInTag</code>函数的代码如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> isBuiltInTag = makeMap(<span class="string">'slot,component'</span>, <span class="literal">true</span>)</span><br></pre></td></tr></table></figure>
+
+<p><code>isReservedTag</code>函数的代码如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> isReservedTag = (tag: string): ?<span class="function"><span class="params">boolean</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> isHTMLTag(tag) || isSVG(tag)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="functional-options"><a href="#functional-options" class="headerlink" title="functional options"></a><code>functional options</code></h3><p>继续看<code>mergeOptions</code>函数下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 当 child 是函数时（Vue.extend 创造的子类），获取其静态属性 options</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> child === <span class="string">'function'</span>) &#123;</span><br><span class="line">  child = child.options</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果用户的选项是函数类型的，就获取它的<code>options</code>属性。</p>
+<p>什么时候选项是一个函数呢？另外，什么函数会有属性<code>options</code>呢？</p>
+<p>Vue 的构造函数就有这个<code>options</code>属性，另外通过<code>Vue.extend</code>创建的子类也可能会有<code>optinons</code>属性。</p>
+<p>也就是说对于<code>child</code>这个参数可以传入一个 Vue 的构造函数，也可以传入通过<code>Vue.extend</code>的创建的子类。</p>
+<h3 id="normalizeFn"><a href="#normalizeFn" class="headerlink" title="normalizeFn"></a><code>normalizeFn</code></h3><p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 有些类型的选项比较灵活多变，需要先规范化后，再合并</span></span><br><span class="line">normalizeProps(child, vm) <span class="comment">// ! 规范化 props 类型</span></span><br><span class="line">normalizeInject(child, vm) <span class="comment">// ! 规范化 inject 类型</span></span><br><span class="line">normalizeDirectives(child) <span class="comment">// ! 规范化 指令</span></span><br></pre></td></tr></table></figure>
+
+<p>这里使用了三个函数去规范化选项，分别规范<code>props</code>、<code>inject</code>和<code>directive</code>选项。</p>
+<p>为什么要去规范化这些选项呢？以<code>props</code>选项为例，它的值非常灵活，即可以是数组，也可以是对象。另外，对象里面的值可以是一个表示数据类型的值，也可以是一个普通对象。</p>
+<p>示例代码如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 数组类型</span></span><br><span class="line">props: [<span class="string">'name'</span>, <span class="string">'age'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: <span class="built_in">String</span>, <span class="comment">// 默认值为类型</span></span><br><span class="line">  age: &#123;</span><br><span class="line">    type: <span class="built_in">Number</span>,</span><br><span class="line">    <span class="keyword">default</span>: <span class="number">18</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Vue 为使用者提供这些灵活的接口，对于我们来说是好事，但对于 Vue 来说却不是，因为需要把不同类型或者格式的数据规范成统一的数据类型和格式，这样后面才能更好的合并选项。</p>
+<p>下面分别查看每个规范函数的代码，这些函数都是在<code>core/util/options.js</code>文件中。</p>
+<h4 id="normalizeProps"><a href="#normalizeProps" class="headerlink" title="normalizeProps"></a><code>normalizeProps</code></h4><p>查看<code>normalizeProps</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeProps</span>(<span class="params">options: Object, vm: ?Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> props = options.props</span><br><span class="line">  <span class="keyword">if</span> (!props) <span class="keyword">return</span></span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  <span class="keyword">let</span> i, val, name</span><br><span class="line">  <span class="comment">// ! 规范数组类型的 props</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(props)) &#123;</span><br><span class="line">    i = props.length</span><br><span class="line">    <span class="keyword">while</span> (i--) &#123;</span><br><span class="line">      val = props[i]</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">typeof</span> val === <span class="string">'string'</span>) &#123;</span><br><span class="line">        name = camelize(val)</span><br><span class="line">        res[name] = &#123; <span class="attr">type</span>: <span class="literal">null</span> &#125; <span class="comment">// !不清除类型统一设置为 null</span></span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">        warn(<span class="string">'props must be strings when using array syntax.'</span>)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ! 规范对象类型的 props</span></span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isPlainObject(props)) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> props) &#123;</span><br><span class="line">      val = props[key]</span><br><span class="line">      name = camelize(key)</span><br><span class="line">      res[name] = isPlainObject(val) ? val : &#123; <span class="attr">type</span>: val &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Invalid value for option "props": expected an Array or an Object, `</span> +</span><br><span class="line">        <span class="string">`but got <span class="subst">$&#123;toRawType(props)&#125;</span>.`</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  options.props = res <span class="comment">// ! 最终都转换成对象类型的值</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>normalizeProps</code>函数是用来规范<code>props</code>选项的，代码逻辑并不难。因为选项<code>props</code>的值只能有两种类型，使用 <code>if</code>语句分别判断这两种类型即可，如果它的值都不是这两种类型，在非生产环境中会报错。</p>
+<p>先声明一个变量<code>res</code>存储规范后的值，它的初始值是一个对象，然后再进行规范。</p>
+<p>当<code>props</code>的值是数组类型时，遍历数组，然后以数组的每个元素作为<code>key</code>，<code>{type: null}</code>作为值，组成键值对的形式存储在前面声明的变量<code>res</code>中。另外还需要判断数组里面的元素的值必须是字符串类型，否则在非生产环境中会报错。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 数组类型</span></span><br><span class="line">props: [<span class="string">'name'</span>, <span class="string">'age'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的数组类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: &#123; <span class="attr">type</span>: <span class="literal">null</span> &#125;,</span><br><span class="line">  age: &#123; <span class="attr">type</span>: <span class="literal">null</span> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当<code>props</code>的值是对象时，遍历对象，使用变量<code>val</code>存储对象中原有的值，如果值是一个普通的对象时，直接赋值为原来的值；如果不是，就把这个值转换成类型的值<code>{type: val}</code>。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: <span class="built_in">String</span>,</span><br><span class="line">  age: &#123; <span class="attr">type</span>: <span class="built_in">Number</span>, <span class="attr">default</span>: <span class="number">18</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的对象类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: &#123; <span class="attr">type</span>: <span class="built_in">String</span> &#125;,</span><br><span class="line">  age: &#123; <span class="attr">type</span>: <span class="built_in">Number</span>, <span class="attr">default</span>: <span class="number">18</span> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在上面的处理过程中使用了<code>camelize</code>函数把每个连字符<code>-</code>形式的<code>key</code>转换成驼峰的形式。</p>
+<p><strong>小结</strong>，不管<code>props</code>选项的值是数组类型还是对象类型，最后都会转换成对象类型，然后对象里的值也是一个对象。</p>
+<h4 id="normalizeInject"><a href="#normalizeInject" class="headerlink" title="normalizeInject"></a><code>normalizeInject</code></h4><p>查看<code>normalizeInject</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeInject</span>(<span class="params">options: Object, vm: ?Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> inject = options.inject</span><br><span class="line">  <span class="keyword">if</span> (!inject) <span class="keyword">return</span></span><br><span class="line">  <span class="keyword">const</span> normalized = (options.inject = &#123;&#125;)</span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(inject)) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; inject.length; i++) &#123;</span><br><span class="line">      normalized[inject[i]] = &#123; <span class="attr">from</span>: inject[i] &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isPlainObject(inject)) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> inject) &#123;</span><br><span class="line">      <span class="keyword">const</span> val = inject[key]</span><br><span class="line">      normalized[key] = isPlainObject(val)</span><br><span class="line">        ? extend(&#123; <span class="attr">from</span>: key &#125;, val)</span><br><span class="line">        : &#123; <span class="attr">from</span>: val &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Invalid value for option "inject": expected an Array or an Object, `</span> +</span><br><span class="line">        <span class="string">`but got <span class="subst">$&#123;toRawType(inject)&#125;</span>.`</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">s</span><br></pre></td></tr></table></figure>
+
+<p><code>normalizeInject</code>函数是用来规范<code>inject</code>选项的，代码逻辑也不难。选项<code>inject</code>的用法和<code>props</code>有点相似，它的值可以是数组类型也可以是对象类型。如果不是这两种类型，在非生产环境中会报错。</p>
+<p>当<code>inject</code>的值是数组类型时，遍历数组，然后转换成键值对的对象类型，其中键和值都是原来的数组元素。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 数组类型</span></span><br><span class="line">inject: [<span class="string">'data1'</span>, <span class="string">'data2'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的数组类型</span></span><br><span class="line">injecrt: &#123;</span><br><span class="line">  data1: &#123; <span class="attr">from</span>: <span class="string">'data1'</span>&#125;,</span><br><span class="line">	data2: &#123; <span class="attr">from</span>: <span class="string">'data2'</span>&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当<code>inject</code>的值为对象类型时，遍历对象。如果对象里的值是普通对象时，在对象里面设置 <code>from</code> 的值为原来 <code>key</code> 的值，然后和原来的对象进行合并；如果对象里的值是字符串时，把它变成一个对象，在设置对象里面的<code>from</code>的值为原来的字符串类型的值，原来对象的 <code>key</code>不会改变。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">inject: &#123;</span><br><span class="line">  data1, <span class="comment">// 相当于 data1: data1</span></span><br><span class="line">  d2: <span class="string">'data2'</span>,</span><br><span class="line">  data3: &#123; <span class="attr">someProperty</span>: <span class="string">'someValue'</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的对象类型</span></span><br><span class="line">inject: &#123;</span><br><span class="line">  data1: &#123; <span class="attr">from</span>: <span class="string">'data1'</span> &#125;,</span><br><span class="line">  d2: &#123; <span class="attr">from</span>: <span class="string">'data2'</span>&#125;,</span><br><span class="line">  data3: &#123; <span class="attr">from</span>: <span class="string">'data3'</span>, <span class="attr">someProperty</span>: <span class="string">'someValue'</span> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>小结</strong>，不管<code>inject</code>选项的值是数组类型还是对象类型，最后都会转换成对象类型，然后对象里的值也是一个对象。</p>
+<h4 id="normalizeDirectives"><a href="#normalizeDirectives" class="headerlink" title="normalizeDirectives"></a><code>normalizeDirectives</code></h4><p>查看<code>normalizeDirectives</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeDirectives</span>(<span class="params">options: Object</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> dirs = options.directives</span><br><span class="line">  <span class="keyword">if</span> (dirs) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> dirs) &#123;</span><br><span class="line">      <span class="keyword">const</span> def = dirs[key]</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">typeof</span> def === <span class="string">'function'</span>) &#123;</span><br><span class="line">        dirs[key] = &#123; <span class="attr">bind</span>: def, <span class="attr">update</span>: def &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>normalizeDirectives</code>函数是用来规范<code>directives</code>选项的。<code>directives</code>的值只能是对象类型，但是对象里面的值可以是函数类型，也可以是对象类型。如果它的值是一个函数，就把它转换成对象，并赋值成为对象的<code>bind</code>和<code>update</code>属性，如果它的值是一个对象，则不用转换。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">directives: &#123;</span><br><span class="line">  test1: &#123;</span><br><span class="line">    bind: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'v-test1'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  test2: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'v-test2'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后</span></span><br><span class="line">directives: &#123;</span><br><span class="line">  test1: &#123;</span><br><span class="line">    bind: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'v-test1'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  test2: &#123;</span><br><span class="line">    bind: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    	<span class="built_in">console</span>.log(<span class="string">'v-test2'</span>)</span><br><span class="line">  	&#125;,</span><br><span class="line">    update: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    	<span class="built_in">console</span>.log(<span class="string">'v-test2'</span>)</span><br><span class="line">  	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="规范化extends-和mixins"><a href="#规范化extends-和mixins" class="headerlink" title="规范化extends 和mixins"></a>规范化<code>extends</code> 和<code>mixins</code></h3><p>继续看<code>mergeOptions</code>函数后面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!child._base) &#123;</span><br><span class="line">  <span class="keyword">if</span> (child.extends) &#123;</span><br><span class="line">    parent = mergeOptions(parent, child.extends, vm) <span class="comment">// ! 合并 extends</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (child.mixins) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, l = child.mixins.length; i &lt; l; i++) &#123;</span><br><span class="line">      parent = mergeOptions(parent, child.mixins[i], vm) <span class="comment">// ! 合并 mixins</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码是处理<code>options</code>中的<code>extends</code>选项和<code>mixins</code>选项的，这两个选项都和组件的代码复用有关。</p>
+<p>对于这两个选项，都是递归调用<code>mergeOptions</code>来处理，并且把默认的<code>parent</code>选项 、用户输入的<code>extends</code>或者<code>mixins</code>选项进行合并，生成一个全新的选项作为默认选项<code>parent</code>。</p>
+<p><code>extends</code>选项的值是不管是对象类型还是函数类型，都可以直接和<code>parent</code>选项进行合并，因为前面已经对函数类型的值进行了处理。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">extends: &#123;</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  created() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 函数类型，使用 Vue.extend 生成子类</span></span><br><span class="line"><span class="keyword">const</span> Ctor = Vue.extend(&#123;</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  created() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br><span class="line">extends: Ctor</span><br></pre></td></tr></table></figure>
+
+<p>而<code>mixins</code>选项的值必须是数组类型，所以需要遍历数组，而数组中的元素<code>mixin</code>必须是对象类型，所以可以按照顺序一个个和<code>parent</code>进行合并。这里注意一下优先级，数组中排序靠后的<code>mixin</code>中的配置会覆盖前面的<code>mixin</code>的配置。</p>
+<p>示例代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">userMixin: &#123;</span><br><span class="line">	data() &#123;</span><br><span class="line">		&#x2F;&#x2F; ...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;,</span><br><span class="line">playMixin: &#123;</span><br><span class="line">	data() &#123;</span><br><span class="line">		&#x2F;&#x2F; ...</span><br><span class="line">	&#125;,</span><br><span class="line">	methods: &#123;</span><br><span class="line">	 &#x2F;&#x2F; ...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">mixins: [userMixin, playMixin]</span><br></pre></td></tr></table></figure>
+
+<p>另外，创建每一个组件时，在<code>script</code>中也会导出一个对象，例如</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;template&gt;</span><br><span class="line">  &lt;!-- 省略模板代码 --&gt;</span><br><span class="line">&lt;&#x2F;template&gt;</span><br><span class="line"></span><br><span class="line">&lt;script&gt;</span><br><span class="line">export default &#123;</span><br><span class="line">  props: &#123;&#125;,</span><br><span class="line">  data() &#123;</span><br><span class="line">    return &#123;&#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  computed: &#123;&#125;,</span><br><span class="line">  methods: &#123;&#125;</span><br><span class="line">  &#x2F;&#x2F; ...</span><br><span class="line">&#125;</span><br><span class="line">&lt;&#x2F;script&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这个对象也是用户输入的<code>options</code>，项目入口文件有<code>options</code>，组件也有<code>options</code>，再加上 Vue 本身也自带<code>options</code>，这么多的<code>options</code>看起来非常乱，所以需要合并选项。</p>
+<p>在初始化实例的方法<code>_init</code>中，使用了<code>mergeOptions</code>方法合并选项。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (options &amp;&amp; options._isComponent) &#123;</span><br><span class="line">  <span class="comment">// optimize internal component instantiation</span></span><br><span class="line">  <span class="comment">// since dynamic options merging is pretty slow, and none of the</span></span><br><span class="line">  <span class="comment">// internal component options needs special treatment.</span></span><br><span class="line">  initInternalComponent(vm, options)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// ! 合并配置</span></span><br><span class="line">  vm.$options = mergeOptions(</span><br><span class="line">    resolveConstructorOptions(vm.constructor), <span class="comment">// ! Vue 初始化时的默认选项,比如默认的指令和组件等等</span></span><br><span class="line">    options || &#123;&#125;, <span class="comment">// ! 用户传入的配置</span></span><br><span class="line">    vm <span class="comment">// !  Vue 实例对象本身</span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用<code>mergeOptions</code>方法传入了三个参数，分别是默认选项、用户选项以及实例对象本身。</p>
+<p>第一个参数是默认选项，通过调用<code>resolveConstructorOptions</code>函数时传入<code>vm.constructor</code>参数来获取的。</p>
+<h2 id="resolveConstructorOptions-1"><a href="#resolveConstructorOptions-1" class="headerlink" title="resolveConstructorOptions"></a><code>resolveConstructorOptions</code></h2><p>先看下<code>resolveConstructorOptions</code>函数的代码，从函数名可以看出这个函数的作用应该是解析构造函数的选项的。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">resolveConstructorOptions</span>(<span class="params">Ctor: Class&lt;Component&gt;</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> options = Ctor.options</span><br><span class="line">  <span class="keyword">if</span> (Ctor.super) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> options</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数传入的参数是<code>vm.constructor</code>，即实例对象的构造函数，也就是<code>Vue</code>。</p>
+<p>先声明变量<code>options</code>存储构造函数的<code>options</code>，然后下面是一个条件语言，如果存在<code>Ctor.super</code>属性，就会执行后面的代码。这个<code>super</code>的属性到底是什么呢？</p>
+<p>如果我们使用了 Vue 的全局方法<code>extend</code>创建一个子类，再通过这个子类创建一个实例对象，那么这个实例对象的<code>constructor</code>就是这个子类。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Sub = Vue.extend() <span class="comment">// 子类</span></span><br><span class="line"><span class="keyword">const</span> s = <span class="keyword">new</span> Sub() <span class="comment">// 子类生成的实例对象</span></span><br></pre></td></tr></table></figure>
+
+<p>通过<code>extend</code>创建的子类会有一个特性的属性<code>super</code>，它的值一般就是 Vue 的构造函数。</p>
+<p>因为这里是 Vue 的实例初始化的过程，所以传入的参数<code>Ctor</code>就是 Vue 的构造函数，而不是子类，也不可能有<code>super</code>属性，所以函数的<code>if</code>的代码块是不会执行的。</p>
+<p>在实例对象创建的过程中，这个函数就可以简化为</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">resolveConstructorOptions</span>(<span class="params">Ctor: Class&lt;Component&gt;</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> options = Ctor.options</span><br><span class="line">  <span class="keyword">return</span> options</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数最后返回<code>Ctor.options</code>，即<code>Vue</code>的默认选项<code>options</code>。它现在应该是下面这个样子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Vue.options = &#123;</span><br><span class="line">	components: &#123;</span><br><span class="line">		KeepAlive</span><br><span class="line">		Transition,</span><br><span class="line">    	TransitionGroup</span><br><span class="line">	&#125;,</span><br><span class="line">	directives:&#123;</span><br><span class="line">	    model,</span><br><span class="line">        show</span><br><span class="line">	&#125;,</span><br><span class="line">	filters: <span class="built_in">Object</span>.create(<span class="literal">null</span>),</span><br><span class="line">	_base: Vue</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这些选项都是在扩展 Vue 的构造函数和平台化包装时添加到 Vue 的构造函数的<code>options</code>属性中的。</p>
+<p><code>mergeOptions</code>函数传入的第二个参数<code>options</code>是用户输入的，在 Vue 项目的入口文件中，使用<code>new</code>创建 Vue 的实例并传入选项配置，传入的选项可能是下面这个样子</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  el: <span class="string">'#app'</span>,</span><br><span class="line">  data: &#123;</span><br><span class="line">    a: <span class="number">1</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>mergeOptions</code>函数传入的最后一个参数<code>vm</code>，这是实例对象本身。</p>
+<h2 id="mergeOptions-1"><a href="#mergeOptions-1" class="headerlink" title="mergeOptions"></a><code>mergeOptions</code></h2><h3 id="checkComponents-1"><a href="#checkComponents-1" class="headerlink" title="checkComponents"></a><code>checkComponents</code></h3><p>分析函数调用时的参数后，接下来看下<code>mergeOptions</code>函数的代码，在<code>core/util/options.js</code>文件中</p>
+<p>函数代码比较长，先看前面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">mergeOptions</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  parent: Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  child: Object,</span></span></span><br><span class="line"><span class="function"><span class="params">  vm?: Component</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    checkComponents(child)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先查看函数的参数，参数分别是<code>parent</code>、<code>child</code>和<code>vm</code>。在实例初始化调用函数的，<code>parent</code>就是默认选项配置，<code>child</code>是用户输入的选项配置，<code>vm</code>是实例对象。</p>
+<p>再看函数体代码，在开发环境中，会调用<code>checkComponents</code>函数检查一下<code>child</code>选项，这里主要校验选项的<code>components</code>属性中的各个组件名。</p>
+<p>我们在组件中引入另外一个组件时，都需要注册引入的这个组件，注册是把组件放入到<code>components</code>选项中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> CompA <span class="keyword">from</span> <span class="string">'../components/CompA'</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  components: &#123; CompA &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面看下<code>checkComponents</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">checkComponents</span>(<span class="params">options: Object</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> options.components) &#123;</span><br><span class="line">    validateComponentName(key)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>函数中遍历<code>components</code>选项中的元素，再使用<code>validateComponentName</code>函数检查下选项中的<code>name</code>是否符合要求。<code>name</code>就是<code>components</code>对象中<code>key</code>的值。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">validateComponentName</span>(<span class="params">name: string</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (</span><br><span class="line">    !<span class="keyword">new</span> <span class="built_in">RegExp</span>(<span class="string">`^[a-zA-Z][\\-\\.0-9_<span class="subst">$&#123;unicodeRegExp.source&#125;</span>]*$`</span>).test(name)</span><br><span class="line">  ) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'Invalid component name: "'</span> +</span><br><span class="line">        name +</span><br><span class="line">        <span class="string">'". Component names '</span> +</span><br><span class="line">        <span class="string">'should conform to valid custom element name in html5 specification.'</span></span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (isBuiltInTag(name) || config.isReservedTag(name)) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">'Do not use built-in or reserved HTML elements as component '</span> +</span><br><span class="line">        <span class="string">'id: '</span> +</span><br><span class="line">        name</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用了两个<code>if</code>来判断<code>name</code>的值是否符合要求，也就是需要同时符合这两个条件才不会报错。</p>
+<ol>
+<li><p>满足正则表达式<code>new RegExp(<code>^[a-zA-Z][\\-\\.0-9_${unicodeRegExp.source}]*$</code>)</code></p>
+</li>
+<li><p>满足条件<code>isBuiltInTag(name) || config.isReservedTag(name)</code></p>
+</li>
+</ol>
+<p>对于第一条，<code>name</code>的值的开头必须由字符组成，后面可以是<code>-</code>符或者<code>.</code>符或者数字以及特殊字符。</p>
+<p>对于第二条，<code>name</code>的值不能是 Vue 内置的组件名比如<code>slot</code>、<code>componnet</code>或者是保留的 HTML 标签名。</p>
+<p><code>isBuiltInTag</code>函数的代码如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> isBuiltInTag = makeMap(<span class="string">'slot,component'</span>, <span class="literal">true</span>)</span><br></pre></td></tr></table></figure>
+
+<p><code>isReservedTag</code>函数的代码如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> isReservedTag = (tag: string): ?<span class="function"><span class="params">boolean</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> isHTMLTag(tag) || isSVG(tag)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="functional-options-1"><a href="#functional-options-1" class="headerlink" title="functional options"></a><code>functional options</code></h3><p>继续看<code>mergeOptions</code>函数下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 当 child 是函数时（Vue.extend 创造的子类），获取其静态属性 options</span></span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> child === <span class="string">'function'</span>) &#123;</span><br><span class="line">  child = child.options</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果用户的选项是函数类型的，就获取它的<code>options</code>属性。</p>
+<p>什么时候选项是一个函数呢？另外，什么函数会有属性<code>options</code>呢？</p>
+<p>Vue 的构造函数就有这个<code>options</code>属性，另外通过<code>Vue.extend</code>创建的子类也可能会有<code>optinons</code>属性。</p>
+<p>也就是说对于<code>child</code>这个参数可以传入一个 Vue 的构造函数，也可以传入通过<code>Vue.extend</code>的创建的子类。</p>
+<h3 id="normalizeFn-1"><a href="#normalizeFn-1" class="headerlink" title="normalizeFn"></a><code>normalizeFn</code></h3><p>接下来继续看代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 有些类型的选项比较灵活多变，需要先规范化后，再合并</span></span><br><span class="line">normalizeProps(child, vm) <span class="comment">// ! 规范化 props 类型</span></span><br><span class="line">normalizeInject(child, vm) <span class="comment">// ! 规范化 inject 类型</span></span><br><span class="line">normalizeDirectives(child) <span class="comment">// ! 规范化 指令</span></span><br></pre></td></tr></table></figure>
+
+<p>这里使用了三个函数去规范化选项，分别规范<code>props</code>、<code>inject</code>和<code>directive</code>选项。</p>
+<p>为什么要去规范化这些选项呢？以<code>props</code>选项为例，它的值非常灵活，即可以是数组，也可以是对象。另外，对象里面的值可以是一个表示数据类型的值，也可以是一个普通对象。</p>
+<p>示例代码如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 数组类型</span></span><br><span class="line">props: [<span class="string">'name'</span>, <span class="string">'age'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: <span class="built_in">String</span>, <span class="comment">// 默认值为类型</span></span><br><span class="line">  age: &#123;</span><br><span class="line">    type: <span class="built_in">Number</span>,</span><br><span class="line">    <span class="keyword">default</span>: <span class="number">18</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Vue 为使用者提供这些灵活的接口，对于我们来说是好事，但对于 Vue 来说却不是，因为需要把不同类型或者格式的数据规范成统一的数据类型和格式，这样后面才能更好的合并选项。</p>
+<p>下面分别查看每个规范函数的代码，这些函数都是在<code>core/util/options.js</code>文件中。</p>
+<h4 id="normalizeProps-1"><a href="#normalizeProps-1" class="headerlink" title="normalizeProps"></a><code>normalizeProps</code></h4><p>查看<code>normalizeProps</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeProps</span>(<span class="params">options: Object, vm: ?Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> props = options.props</span><br><span class="line">  <span class="keyword">if</span> (!props) <span class="keyword">return</span></span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  <span class="keyword">let</span> i, val, name</span><br><span class="line">  <span class="comment">// ! 规范数组类型的 props</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(props)) &#123;</span><br><span class="line">    i = props.length</span><br><span class="line">    <span class="keyword">while</span> (i--) &#123;</span><br><span class="line">      val = props[i]</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">typeof</span> val === <span class="string">'string'</span>) &#123;</span><br><span class="line">        name = camelize(val)</span><br><span class="line">        res[name] = &#123; <span class="attr">type</span>: <span class="literal">null</span> &#125; <span class="comment">// !不清除类型统一设置为 null</span></span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">        warn(<span class="string">'props must be strings when using array syntax.'</span>)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ! 规范对象类型的 props</span></span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isPlainObject(props)) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> props) &#123;</span><br><span class="line">      val = props[key]</span><br><span class="line">      name = camelize(key)</span><br><span class="line">      res[name] = isPlainObject(val) ? val : &#123; <span class="attr">type</span>: val &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Invalid value for option "props": expected an Array or an Object, `</span> +</span><br><span class="line">        <span class="string">`but got <span class="subst">$&#123;toRawType(props)&#125;</span>.`</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  options.props = res <span class="comment">// ! 最终都转换成对象类型的值</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>normalizeProps</code>函数是用来规范<code>props</code>选项的，代码逻辑并不难。因为选项<code>props</code>的值只能有两种类型，使用 <code>if</code>语句分别判断这两种类型即可，如果它的值都不是这两种类型，在开发环境中会报错。</p>
+<p>先声明一个变量<code>res</code>存储规范后的值，它的初始值是一个对象，然后再进行规范。</p>
+<p>当<code>props</code>的值是数组类型时，遍历数组，然后以数组的每个元素作为<code>key</code>，<code>{type: null}</code>作为值，组成键值对的形式存储在前面声明的变量<code>res</code>中。另外还需要判断数组里面的元素的值必须是字符串类型，否则在开发环境中会报错。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 数组类型</span></span><br><span class="line">props: [<span class="string">'name'</span>, <span class="string">'age'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的数组类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: &#123; <span class="attr">type</span>: <span class="literal">null</span> &#125;,</span><br><span class="line">  age: &#123; <span class="attr">type</span>: <span class="literal">null</span> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当<code>props</code>的值是对象时，遍历对象，使用变量<code>val</code>存储对象中原有的值，如果值是一个普通的对象时，直接赋值为原来的值；如果不是，就把这个值转换成类型的值<code>{type: val}</code>。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: <span class="built_in">String</span>,</span><br><span class="line">  age: &#123; <span class="attr">type</span>: <span class="built_in">Number</span>, <span class="attr">default</span>: <span class="number">18</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的对象类型</span></span><br><span class="line">props: &#123;</span><br><span class="line">  name: &#123; <span class="attr">type</span>: <span class="built_in">String</span> &#125;,</span><br><span class="line">  age: &#123; <span class="attr">type</span>: <span class="built_in">Number</span>, <span class="attr">default</span>: <span class="number">18</span> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在上面的处理过程中使用了<code>camelize</code>函数把每个连字符<code>-</code>形式的<code>key</code>转换成驼峰的形式。</p>
+<p><strong>小结</strong>，不管<code>props</code>选项的值是数组类型还是对象类型，最后都会转换成对象类型，然后对象里的值也是一个对象。</p>
+<h4 id="normalizeInject-1"><a href="#normalizeInject-1" class="headerlink" title="normalizeInject"></a><code>normalizeInject</code></h4><p>查看<code>normalizeInject</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeInject</span>(<span class="params">options: Object, vm: ?Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> inject = options.inject</span><br><span class="line">  <span class="keyword">if</span> (!inject) <span class="keyword">return</span></span><br><span class="line">  <span class="keyword">const</span> normalized = (options.inject = &#123;&#125;)</span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">Array</span>.isArray(inject)) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; inject.length; i++) &#123;</span><br><span class="line">      normalized[inject[i]] = &#123; <span class="attr">from</span>: inject[i] &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (isPlainObject(inject)) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> inject) &#123;</span><br><span class="line">      <span class="keyword">const</span> val = inject[key]</span><br><span class="line">      normalized[key] = isPlainObject(val)</span><br><span class="line">        ? extend(&#123; <span class="attr">from</span>: key &#125;, val)</span><br><span class="line">        : &#123; <span class="attr">from</span>: val &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Invalid value for option "inject": expected an Array or an Object, `</span> +</span><br><span class="line">        <span class="string">`but got <span class="subst">$&#123;toRawType(inject)&#125;</span>.`</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">s</span><br></pre></td></tr></table></figure>
+
+<p><code>normalizeInject</code>函数是用来规范<code>inject</code>选项的，代码逻辑也不难。选项<code>inject</code>的用法和<code>props</code>有点相似，它的值可以是数组类型也可以是对象类型。如果不是这两种类型，在开发环境中会报错。</p>
+<p>当<code>inject</code>的值是数组类型时，遍历数组，然后转换成键值对的对象类型，其中键和值都是原来的数组元素。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 数组类型</span></span><br><span class="line">inject: [<span class="string">'data1'</span>, <span class="string">'data2'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的数组类型</span></span><br><span class="line">injecrt: &#123;</span><br><span class="line">  data1: &#123; <span class="attr">from</span>: <span class="string">'data1'</span>&#125;,</span><br><span class="line">	data2: &#123; <span class="attr">from</span>: <span class="string">'data2'</span>&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当<code>inject</code>的值为对象类型时，遍历对象。如果对象里的值是普通对象时，在对象里面设置 <code>from</code> 的值为原来 <code>key</code> 的值，然后和原来的对象进行合并；如果对象里的值是字符串时，把它变成一个对象，在设置对象里面的<code>from</code>的值为原来的字符串类型的值，原来对象的 <code>key</code>不会改变。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">inject: &#123;</span><br><span class="line">  data1, <span class="comment">// 相当于 data1: data1</span></span><br><span class="line">  d2: <span class="string">'data2'</span>,</span><br><span class="line">  data3: &#123; <span class="attr">someProperty</span>: <span class="string">'someValue'</span> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后的对象类型</span></span><br><span class="line">inject: &#123;</span><br><span class="line">  data1: &#123; <span class="attr">from</span>: <span class="string">'data1'</span> &#125;,</span><br><span class="line">  d2: &#123; <span class="attr">from</span>: <span class="string">'data2'</span>&#125;,</span><br><span class="line">  data3: &#123; <span class="attr">from</span>: <span class="string">'data3'</span>, <span class="attr">someProperty</span>: <span class="string">'someValue'</span> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>小结</strong>，不管<code>inject</code>选项的值是数组类型还是对象类型，最后都会转换成对象类型，然后对象里的值也是一个对象。</p>
+<h4 id="normalizeDirectives-1"><a href="#normalizeDirectives-1" class="headerlink" title="normalizeDirectives"></a><code>normalizeDirectives</code></h4><p>查看<code>normalizeDirectives</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">normalizeDirectives</span>(<span class="params">options: Object</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> dirs = options.directives</span><br><span class="line">  <span class="keyword">if</span> (dirs) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> dirs) &#123;</span><br><span class="line">      <span class="keyword">const</span> def = dirs[key]</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">typeof</span> def === <span class="string">'function'</span>) &#123;</span><br><span class="line">        dirs[key] = &#123; <span class="attr">bind</span>: def, <span class="attr">update</span>: def &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>normalizeDirectives</code>函数是用来规范<code>directives</code>选项的。<code>directives</code>的值只能是对象类型，但是对象里面的值可以是函数类型，也可以是对象类型。如果它的值是一个函数，就把它转换成对象，并赋值成为对象的<code>bind</code>和<code>update</code>属性，如果它的值是一个对象，则不用转换。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">directives: &#123;</span><br><span class="line">  test1: &#123;</span><br><span class="line">    bind: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'v-test1'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  test2: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'v-test2'</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范后</span></span><br><span class="line">directives: &#123;</span><br><span class="line">  test1: &#123;</span><br><span class="line">    bind: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="built_in">console</span>.log(<span class="string">'v-test1'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  test2: &#123;</span><br><span class="line">    bind: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    	<span class="built_in">console</span>.log(<span class="string">'v-test2'</span>)</span><br><span class="line">  	&#125;,</span><br><span class="line">    update: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    	<span class="built_in">console</span>.log(<span class="string">'v-test2'</span>)</span><br><span class="line">  	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="规范化extends-和mixins-1"><a href="#规范化extends-和mixins-1" class="headerlink" title="规范化extends 和mixins"></a>规范化<code>extends</code> 和<code>mixins</code></h3><p>继续看<code>mergeOptions</code>函数后面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!child._base) &#123;</span><br><span class="line">  <span class="keyword">if</span> (child.extends) &#123;</span><br><span class="line">    parent = mergeOptions(parent, child.extends, vm) <span class="comment">// ! 合并 extends</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (child.mixins) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>, l = child.mixins.length; i &lt; l; i++) &#123;</span><br><span class="line">      parent = mergeOptions(parent, child.mixins[i], vm) <span class="comment">// ! 合并 mixins</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码是处理<code>options</code>中的<code>extends</code>选项和<code>mixins</code>选项的，这两个选项都和组件的代码复用有关。</p>
+<p>对于这两个选项，都是递归调用<code>mergeOptions</code>来处理，并且把默认的<code>parent</code>选项 、用户输入的<code>extends</code>或者<code>mixins</code>选项进行合并，生成一个全新的选项作为默认选项<code>parent</code>。</p>
+<p><code>extends</code>选项的值是不管是对象类型还是函数类型，都可以直接和<code>parent</code>选项进行合并，因为前面已经对函数类型的值进行了处理。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 对象类型</span></span><br><span class="line">extends: &#123;</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  created() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 函数类型，使用 Vue.extend 生成子类</span></span><br><span class="line"><span class="keyword">const</span> Ctor = Vue.extend(&#123;</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  created() &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br><span class="line">extends: Ctor</span><br></pre></td></tr></table></figure>
+
+<p>而<code>mixins</code>选项的值必须是数组类型，所以需要遍历数组，而数组中的元素<code>mixin</code>必须是对象类型，所以可以按照顺序一个个和<code>parent</code>进行合并。这里注意一下优先级，数组中排序靠后的<code>mixin</code>中的配置会覆盖前面的<code>mixin</code>的配置。</p>
+<p>示例代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">userMixin: &#123;</span><br><span class="line">	data() &#123;</span><br><span class="line">		&#x2F;&#x2F; ...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;,</span><br><span class="line">playMixin: &#123;</span><br><span class="line">	data() &#123;</span><br><span class="line">		&#x2F;&#x2F; ...</span><br><span class="line">	&#125;,</span><br><span class="line">	methods: &#123;</span><br><span class="line">	 &#x2F;&#x2F; ...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">mixins: [userMixin, playMixin]</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190830-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E8%A7%84%E8%8C%83%E5%8C%96/" title="Vue2源码学习笔记之选项合并的规范化">https://haledeng.com/blog/20190830-Vue2源码学习笔记之选项合并的规范化/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190828-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E5%BC%80%E7%AF%87/" rel="prev" title="Vue2源码学习笔记之初始化开篇">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之初始化开篇
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190902-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E9%80%89%E9%A1%B9%E5%90%88%E5%B9%B6%E7%9A%84%E7%AD%96%E7%95%A5/" rel="next" title="Vue2源码学习笔记之选项合并的策略">
+      Vue2源码学习笔记之选项合并的策略 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#resolveConstructorOptions"><span class="nav-number">1.</span> <span class="nav-text">resolveConstructorOptions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mergeOptions"><span class="nav-number">2.</span> <span class="nav-text">mergeOptions</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#checkComponents"><span class="nav-number">2.1.</span> <span class="nav-text">checkComponents</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#functional-options"><span class="nav-number">2.2.</span> <span class="nav-text">functional options</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#normalizeFn"><span class="nav-number">2.3.</span> <span class="nav-text">normalizeFn</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#normalizeProps"><span class="nav-number">2.3.1.</span> <span class="nav-text">normalizeProps</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#normalizeInject"><span class="nav-number">2.3.2.</span> <span class="nav-text">normalizeInject</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#normalizeDirectives"><span class="nav-number">2.3.3.</span> <span class="nav-text">normalizeDirectives</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#规范化extends-和mixins"><span class="nav-number">2.4.</span> <span class="nav-text">规范化extends 和mixins</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#resolveConstructorOptions-1"><span class="nav-number">3.</span> <span class="nav-text">resolveConstructorOptions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mergeOptions-1"><span class="nav-number">4.</span> <span class="nav-text">mergeOptions</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#checkComponents-1"><span class="nav-number">4.1.</span> <span class="nav-text">checkComponents</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#functional-options-1"><span class="nav-number">4.2.</span> <span class="nav-text">functional options</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#normalizeFn-1"><span class="nav-number">4.3.</span> <span class="nav-text">normalizeFn</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#normalizeProps-1"><span class="nav-number">4.3.1.</span> <span class="nav-text">normalizeProps</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#normalizeInject-1"><span class="nav-number">4.3.2.</span> <span class="nav-text">normalizeInject</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#normalizeDirectives-1"><span class="nav-number">4.3.3.</span> <span class="nav-text">normalizeDirectives</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#规范化extends-和mixins-1"><span class="nav-number">4.4.</span> <span class="nav-text">规范化extends 和mixins</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

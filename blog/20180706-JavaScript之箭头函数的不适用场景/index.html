@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="ES6 新增了箭头函数，使用起来非常简洁干练。 请看下面代码： 1234567891011121314&#x2F;&#x2F; 普通函数const fn &#x3D; function(arg1, arg2) &amp;#123;  &#x2F;&#x2F; ...code&amp;#125;&#x2F;&#x2F; 箭头函数，括号内的是参数const fn &#x3D; (arg1, arg2) &#x3D;&gt; &amp;#123;  &#x2F;&#x2F; ...code&amp;#125;&#x2F;&#x2F; 箭头函数 无参数setTim">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JavaScript之箭头函数的不适用场景">
+<meta property="og:url" content="https://haledeng.com/blog/20180706-JavaScript%E4%B9%8B%E7%AE%AD%E5%A4%B4%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%8D%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="ES6 新增了箭头函数，使用起来非常简洁干练。 请看下面代码： 1234567891011121314&#x2F;&#x2F; 普通函数const fn &#x3D; function(arg1, arg2) &amp;#123;  &#x2F;&#x2F; ...code&amp;#125;&#x2F;&#x2F; 箭头函数，括号内的是参数const fn &#x3D; (arg1, arg2) &#x3D;&gt; &amp;#123;  &#x2F;&#x2F; ...code&amp;#125;&#x2F;&#x2F; 箭头函数 无参数setTim">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-07-06T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:52:52.673Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="JavaScript">
+<meta property="article:tag" content="箭头函数">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20180706-JavaScript%E4%B9%8B%E7%AE%AD%E5%A4%B4%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%8D%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>JavaScript之箭头函数的不适用场景 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20180706-JavaScript%E4%B9%8B%E7%AE%AD%E5%A4%B4%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%8D%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JavaScript之箭头函数的不适用场景
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-07-06 20:00:00" itemprop="dateCreated datePublished" datetime="2018-07-06T20:00:00+08:00">2018-07-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JavaScript/" itemprop="url" rel="index"><span itemprop="name">JavaScript</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>3.2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>ES6 新增了箭头函数，使用起来非常简洁干练。</p>
+<p>请看下面代码：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 普通函数</span></span><br><span class="line"><span class="keyword">const</span> fn = <span class="function"><span class="keyword">function</span>(<span class="params">arg1, arg2</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// ...code</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 箭头函数，括号内的是参数</span></span><br><span class="line"><span class="keyword">const</span> fn = <span class="function">(<span class="params">arg1, arg2</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="comment">// ...code</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 箭头函数 无参数</span></span><br><span class="line">setTimeOut(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="comment">// ...code</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<p>看了上面的例子，是不是觉得箭头函数很简便，少了很多代码，看起来也很舒适呢。特别是使用匿名函数时，非常清爽，是不是觉得以后要尽量使用箭头函数了。</p>
+<p>但是，如果你是新手的话，在使用一段时候后你可能会发现，有时候箭头函数总是会出现一些莫名奇妙的错误，也不知道是什么原因。如果这时候把箭头函数换成普通的函数，错误又突然解决掉了。这到底是怎么回事呢？</p>
+<p>这就要更深入的去了解下箭头函数了！箭头函数虽然简洁方便，但是不能滥用，特别是在与<code>this</code>相关的场景。</p>
+<h2 id="与-this-相关场景"><a href="#与-this-相关场景" class="headerlink" title="与 this 相关场景"></a>与 this 相关场景</h2><h3 id="定义对象方法"><a href="#定义对象方法" class="headerlink" title="定义对象方法"></a>定义对象方法</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> hale = &#123;</span><br><span class="line">  name: <span class="string">'Hale'</span>,</span><br><span class="line">  sayName: <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="keyword">this</span>.name)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">hale.sayName() <span class="comment">// undefined</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="定义构造函数"><a href="#定义构造函数" class="headerlink" title="定义构造函数"></a>定义构造函数</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Person = <span class="function"><span class="params">name</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> hale = <span class="keyword">new</span> Person(<span class="string">'hale'</span>)</span><br><span class="line"><span class="built_in">console</span>.log(hale) <span class="comment">// TypeError: Person is not a constructor</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="定义函数原型方法"><a href="#定义函数原型方法" class="headerlink" title="定义函数原型方法"></a>定义函数原型方法</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Person</span>(<span class="params">name</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">&#125;</span><br><span class="line">Person.prototype.sayName = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="keyword">this</span>.name)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> jack = <span class="keyword">new</span> Person(<span class="string">'jack'</span>)</span><br><span class="line">jack.sayName() <span class="comment">// undefined</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="定义动态上下文的回调函数"><a href="#定义动态上下文的回调函数" class="headerlink" title="定义动态上下文的回调函数"></a>定义动态上下文的回调函数</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> p = <span class="built_in">document</span>.querySelector(<span class="string">'p'</span>)</span><br><span class="line">p.addEventListener(<span class="string">'click'</span>, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">this</span>.innerText = <span class="string">'hello world'</span></span><br><span class="line">&#125;) <span class="comment">// 无反应</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>上面的几种场景都是与<code>this</code>相关的。</p>
+<p>我们都知道函数(普通函数)里面的<code>this</code>的值是根据<a href="https://haledeng.com/blog/2018/05/19/JavaScrip作用域和闭包的理解.html#执行上下文">执行上下文</a>来判断的, 是不固定的。</p>
+<p>但是，箭头函数内的<code>this</code>的值不一样，因为箭头函数没有自己的<code>this</code>，它里面的<code>this</code>指的就是外层代码块的<code>this</code>，也就是外层代码块的<a href="https://haledeng.com/blog/2018/05/19/JavaScrip作用域和闭包的理解.html#作用域">作用域</a>，它是固定的。</p>
+<p>所以，不能使用箭头函数创建构造函数。</p>
+<p>因为箭头函数没有<code>this</code>，也不能使用<code>call()</code>,<code>apply()</code>,<code>bind()</code>等改变<code>this</code>的指向。</p>
+<p>如果需要用到<code>this</code>指向本身函数或者对象的时候，就不能用箭头函数了。</p>
+<p>当然，有时候也可以利用箭头函数的<code>this</code>指向外层代码块的情况来编写代码。</p>
+<p>比如 vue 组件的实例方法，使用定时器或者内层函数时，需要调用本身的属性和方法，就可以使用箭头函数和<code>this</code>了，这时候正好利用箭头函数的<code>this</code>指向外层代码块的情况。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">  data() &#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      name: <span class="string">'hale'</span>,</span><br><span class="line">      list: []，</span><br><span class="line">      target: &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  create() &#123;</span><br><span class="line">    <span class="keyword">this</span>.$axios.get(<span class="string">'api/data'</span>)</span><br><span class="line">      .then(<span class="function"><span class="params">res</span> =&gt;</span> &#123; <span class="comment">// 箭头函数</span></span><br><span class="line">      <span class="keyword">this</span>.list = res.data</span><br><span class="line">      <span class="comment">// ...code</span></span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;,</span><br><span class="line">  methods: &#123;</span><br><span class="line">    method1() &#123;</span><br><span class="line">      setTimeOut(<span class="function"><span class="params">()</span> =&gt;</span> &#123;  <span class="comment">// 箭头函数</span></span><br><span class="line">        <span class="keyword">const</span> name = <span class="keyword">this</span>.name</span><br><span class="line">        <span class="comment">// ...code</span></span><br><span class="line">        <span class="keyword">this</span>.method2(list)</span><br><span class="line">      &#125;, <span class="number">1000</span>)</span><br><span class="line">    &#125;，</span><br><span class="line">    method2(list) &#123;</span><br><span class="line">      list.forEach(<span class="function"><span class="params">item</span> =&gt;</span> &#123; <span class="comment">// 箭头函数</span></span><br><span class="line">        <span class="comment">// ...code</span></span><br><span class="line">        <span class="keyword">this</span>.target = item.xxx</span><br><span class="line">      &#125;)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>稍微了解过 Vue 的源码的同学都知道，Vue 其实就是一个构造函数。整个 Vue 项目的入口就是 Vue 构造函数 <code>new</code> 出来的实例对象。</p>
+<p>这个实例对象里面有自带很多属性和方法。Vue 实例里面的<code>this</code>指的就是 vue 实例本身。</p>
+<p>例如，<code>setTimeOut</code>方法调用了箭头函数，而且还使用了<code>this</code>，这里的<code>this</code>指向的是<code>setTimeOut</code>外层的作用域，即 method1 方法的作用域，也就是 method1 的<code>this</code>的执行一样，而 method1 是一个普通函数，它里面的<code>this</code>指向的是调用这个方法的实例对象，也就是 Vue 实例，所以可以拿到 Vue 实例中 data 的数据，以及调用实例本身的方法。</p>
+<p>如果把<code>setTimeOut</code>里面的箭头函数改成普通函数<code>function(){}</code>, 再使用<code>this</code>，<code>this</code>指向的就是<code>setTimeOut</code>本身，因为<code>setTimeOut</code>本身根本就没有<code>data</code>数据或者其他的方法，所以得到的只有<code>undefined</code>了。</p>
+<p>所以，<code>methods</code>选项里面的方法，最好也不要使用箭头函数。如果使用了箭头函数，里面再调用<code>this</code>是无法访问 Vue 实例的属性和方法的，因为这时的<code>this</code>已经不是指向 Vue 实例了，而是指向 Vue 实例外层的作用域。</p>
+<p>箭头函数用在什么场景中，主要还是需要理解箭头函数里面<code>this</code>的指向问题。</p>
+<h2 id="追求过短代码"><a href="#追求过短代码" class="headerlink" title="追求过短代码"></a>追求过短代码</h2><p>箭头函数虽然简洁方便，但是有时候过于简洁也不行，特别是在函数嵌套的情况下，会影响代码的可读性。</p>
+<p>下面的例子中是两个参数相加的函数，如果只有一个参数就加上常量 5，使用箭头函数只有一行代码，可能比较难以理解，转换成普通函数就比较好理解了。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 箭头函数</span></span><br><span class="line"><span class="keyword">const</span> add = <span class="function">(<span class="params">a, b</span>) =&gt;</span> (b === <span class="literal">undefined</span> ? <span class="function"><span class="params">b</span> =&gt;</span> b + <span class="number">5</span> : a + b)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> addNum = add()</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(addNum(<span class="number">1</span>)) <span class="comment">// 6</span></span><br><span class="line"><span class="built_in">console</span>.log(add()(<span class="number">1</span>)) <span class="comment">// 6</span></span><br><span class="line"><span class="built_in">console</span>.log(add(<span class="number">4</span>, <span class="number">10</span>)) <span class="comment">// 14</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 普通函数</span></span><br><span class="line"><span class="keyword">const</span> add = <span class="function"><span class="keyword">function</span>(<span class="params">a, b</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (b === <span class="literal">undefined</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span>(<span class="params">b</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> b + <span class="number">5</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> a + b</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>滥用箭头函数使得代码过于简短，语义化不明，不利于阅读。毕竟代码主要还是给人看的，而不是给机器看的。</p>
+<h2 id="其他情况"><a href="#其他情况" class="headerlink" title="其他情况"></a>其他情况</h2><p>还有一些其他的特殊场景也不适合使用箭头函数。</p>
+<ul>
+<li>需要用到<code>arguments</code>对象时，因为箭头函数里面没有<code>arguments</code>这个对象。</li>
+<li>Generator 函数， 因为箭头函数不能使用<code>yield</code>命令。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>箭头函数适合于无复杂逻辑或者无副作用的纯函数的场景。比如定时器<code>setTimeOut</code>,<code>setInterval</code>; 数组对象的方法<code>forEach</code>,<code>filter</code>,<code>findIndex</code>,<code>map</code>,<code>reduce</code>等。</p>
+</li>
+<li><p>尽量不要在最外层的函数中使用箭头函数。因为箭头函数的<code>this</code>指向的是外层作用域，这个作用域可能是全局作用域。函数里面如果需要用到<code>this</code>的话，会污染全局作用域。这时候应该先使用普通函数，然后再根据实际情况使用箭头函数，记住箭头函数的<code>this</code>指向的就是外面普通函数的作用域。</p>
+</li>
+<li><p>使用箭头函数不要追求过于简短的代码，还需要保证代码的可读性。</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20180706-JavaScript%E4%B9%8B%E7%AE%AD%E5%A4%B4%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%8D%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF/" title="JavaScript之箭头函数的不适用场景">https://haledeng.com/blog/20180706-JavaScript之箭头函数的不适用场景/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JavaScript/" rel="tag"># JavaScript</a>
+              <a href="/tags/%E7%AE%AD%E5%A4%B4%E5%87%BD%E6%95%B0/" rel="tag"># 箭头函数</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20180630-%E8%AE%B0%E4%B8%80%E6%AC%A1Promise%E6%95%B0%E6%8D%AE%E4%BC%A0%E9%80%92%E4%B8%AD%E7%9A%84return%E5%9D%91/" rel="prev" title="记一次Promise数据传递中的return坑">
+      <i class="fa fa-chevron-left"></i> 记一次Promise数据传递中的return坑
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20180711-CSS%E4%B9%8BBFC%E7%9A%84%E7%90%86%E8%A7%A3/" rel="next" title="CSS之BFC的理解">
+      CSS之BFC的理解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#与-this-相关场景"><span class="nav-number">1.</span> <span class="nav-text">与 this 相关场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#定义对象方法"><span class="nav-number">1.1.</span> <span class="nav-text">定义对象方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定义构造函数"><span class="nav-number">1.2.</span> <span class="nav-text">定义构造函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定义函数原型方法"><span class="nav-number">1.3.</span> <span class="nav-text">定义函数原型方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定义动态上下文的回调函数"><span class="nav-number">1.4.</span> <span class="nav-text">定义动态上下文的回调函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#说明"><span class="nav-number">1.5.</span> <span class="nav-text">说明</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#追求过短代码"><span class="nav-number">2.</span> <span class="nav-text">追求过短代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他情况"><span class="nav-number">3.</span> <span class="nav-text">其他情况</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

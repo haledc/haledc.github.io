@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="再次回到initState函数中，其中data、watch、computed和props选项的初始化都已讲解，下面还剩下methods选项的初始化未讲解。看下面的代码 1if (opts.methods) initMethods(vm, opts.methods)  通过调用initMethods函数初始化methods选项，还需要传入实例对象vm和合并选项后的methods属性。 initMet">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vue2源码学习笔记之初始化终局">
+<meta property="og:url" content="https://haledeng.com/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="再次回到initState函数中，其中data、watch、computed和props选项的初始化都已讲解，下面还剩下methods选项的初始化未讲解。看下面的代码 1if (opts.methods) initMethods(vm, opts.methods)  通过调用initMethods函数初始化methods选项，还需要传入实例对象vm和合并选项后的methods属性。 initMet">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-30T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:58:31.026Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="源码学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Vue2源码学习笔记之初始化终局 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vue2源码学习笔记之初始化终局
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-09-30 20:00:00" itemprop="dateCreated datePublished" datetime="2019-09-30T20:00:00+08:00">2019-09-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Vue/" itemprop="url" rel="index"><span itemprop="name">Vue</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>6.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>再次回到<code>initState</code>函数中，其中<code>data</code>、<code>watch</code>、<code>computed</code>和<code>props</code>选项的初始化都已讲解，下面还剩下<code>methods</code>选项的初始化未讲解。看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (opts.methods) initMethods(vm, opts.methods)</span><br></pre></td></tr></table></figure>
+
+<p>通过调用<code>initMethods</code>函数初始化<code>methods</code>选项，还需要传入实例对象<code>vm</code>和合并选项后的<code>methods</code>属性。</p>
+<h2 id="initMethods"><a href="#initMethods" class="headerlink" title="initMethods"></a><code>initMethods</code></h2><p>下面看下<code>initMethods</code> 函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> props = vm.$options.props</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">const</span> key <span class="keyword">in</span> methods) &#123;</span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>props</code>存储合并选项后的<code>props</code>选项，这个常量在后面会用到。</p>
+<p>然后接下来就是一个<code>for</code>循环语句，遍历<code>methods</code>选项，下面看下<code>for</code>循环语句里面的内容。</p>
+<a id="more"></a>
+
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">  <span class="comment">// ! 方法必须是函数，否则报错</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">typeof</span> methods[key] !== <span class="string">'function'</span>) &#123;</span><br><span class="line">    warn(</span><br><span class="line">      <span class="string">`Method "<span class="subst">$&#123;key&#125;</span>" has type "<span class="subst">$&#123;<span class="keyword">typeof</span> methods[</span></span></span><br><span class="line"><span class="string"><span class="subst">        key</span></span></span><br><span class="line"><span class="string"><span class="subst">      ]&#125;</span>" in the component definition. `</span> +</span><br><span class="line">        <span class="string">`Did you reference the function correctly?`</span>,</span><br><span class="line">      vm</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在非生产环境中，如果<code>methods</code>选项里面的<code>value</code>值不是函数类型会报错。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 方法名不能和 props 里面的属性名相同，否则报错，这样会产生冲突，覆盖掉 props 的属性</span></span><br><span class="line"><span class="keyword">if</span> (props &amp;&amp; hasOwn(props, key)) &#123;</span><br><span class="line">  warn(<span class="string">`Method "<span class="subst">$&#123;key&#125;</span>" has already been defined as a prop.`</span>, vm)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ! 方法和实例对象属性同名 且 是 Vue 的保留字时（以_或者$开头的，如 _data $parent 等）会报错</span></span><br><span class="line"><span class="comment">// ! 会产生冲突，覆盖掉实例属性</span></span><br><span class="line"><span class="keyword">if</span> (key <span class="keyword">in</span> vm &amp;&amp; isReserved(key)) &#123;</span><br><span class="line">  warn(</span><br><span class="line">    <span class="string">`Method "<span class="subst">$&#123;key&#125;</span>" conflicts with an existing Vue instance method. `</span> +</span><br><span class="line">      <span class="string">`Avoid defining component methods that start with _ or $.`</span></span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在非生产环境中，<code>methods</code>选项中的方法名不能和<code>props</code>选项中的<code>key</code>相同，否则会报错，因为这样会产生冲突，方法会覆盖掉<code>props</code>中的数据。</p>
+<p>另外，<code>methods</code>选项中的方法和实例对象<code>vm</code>中的属性同名，并且方法名和 Vue 的保留属性重名时，会报错。</p>
+<p>继续看剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 代理方法到实例，并且指向实例</span></span><br><span class="line">vm[key] = <span class="keyword">typeof</span> methods[key] !== <span class="string">'function'</span> ? noop : bind(methods[key], vm)</span><br></pre></td></tr></table></figure>
+
+<p>把<code>methods</code>中的方法代理到实例对象<code>vm</code>中。这里并没有用<code>object.definedProperty</code>方法代理属性，而是直接调用了<code>bind</code>的函数，把方法的<code>this</code>指向实例对象。这个<code>bind</code>函数是对原生的<code>Function.prototype.bind</code>方法的做了兼容性处理的函数。</p>
+<p>到这里，<code>methods</code>选项的初始化就讲解完成，<code>initState</code>函数的初始化全部讲解完成。</p>
+<h2 id="provide"><a href="#provide" class="headerlink" title="provide"></a><code>provide</code></h2><p>再次回到<code>Vue.prototype._init</code>函数中，查看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">initLifecycle(vm) <span class="comment">// ! 初始化生命周期相关配置 存储本身实例到父节点 新增属性 $parent $root $children $refs 等</span></span><br><span class="line">initEvents(vm) <span class="comment">// ! 初始化事件相关配置 更新 listeners</span></span><br><span class="line">initRender(vm) <span class="comment">// ! 初始化渲染, 创建 VNode 另新增属性 $attrs 和 $listeners</span></span><br><span class="line">callHook(vm, <span class="string">'beforeCreate'</span>) <span class="comment">// ! 执行 beforeCreate 钩子函数</span></span><br><span class="line">initInjections(vm) <span class="comment">// ! 初始化 Injections resolve injections before data/props</span></span><br><span class="line">initState(vm) <span class="comment">// ! 初始化状态，响应式相关 按顺序 props =&gt; methods =&gt; data =&gt; computed  =&gt; watch</span></span><br><span class="line">initProvide(vm) <span class="comment">// ! 初始化 Provide resolve provide after data/props</span></span><br><span class="line">callHook(vm, <span class="string">'created'</span>) <span class="comment">// ! 执行 created 钩子函数</span></span><br></pre></td></tr></table></figure>
+
+<p>上面初始化的函数中，只剩下<code>initInjections</code>函数和<code>initProvide</code>函数没有讲解，注意在上面的代码中，<code>initInjections</code>函数要比<code>initProvide</code>函数更早执行。</p>
+<p>这是为什么呢？等我们讲解到<code>initInjections</code>函数时就知道了。</p>
+<p>下面先看下<code>provide</code>选项的初始化，查看<code>initProvide</code>函数的代码，在<code>core/instance/inject.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">initProvide</span>(<span class="params">vm: Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> provide = vm.$options.provide</span><br><span class="line">  <span class="keyword">if</span> (provide) &#123;</span><br><span class="line">    vm._provided = <span class="keyword">typeof</span> provide === <span class="string">'function'</span> ? provide.call(vm) : provide</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数非常简单，只有几行代码。声明常量<code>provide</code>存储合并选项后<code>provide</code>选项，先判断<code>provide</code>是否存在，如果存在，定义实例对象的<code>vm._provided</code>属性存储<code>provide</code>，在存储前判断<code>provide</code>是不是函数类型，如果是的话，还需要执行函数获取值。</p>
+<p><strong>小结</strong>，<code>initProvide</code>函数的作用就是创建实例的<code>_provided</code>属性，然后存储合并后的<code>provide</code>选项。</p>
+<h2 id="inject"><a href="#inject" class="headerlink" title="inject"></a><code>inject</code></h2><h3 id="initInjections"><a href="#initInjections" class="headerlink" title="initInjections"></a><code>initInjections</code></h3><p>下面看<code>inject</code>的选项的初始化，查看<code>initInjections</code>函数的代码，在<code>core/instance/inject.js</code>文件中</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">initInjections</span>(<span class="params">vm: Component</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> result = resolveInject(vm.$options.inject, vm) <span class="comment">// ! 讲解 inject，获取父组件 provide 的值</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>result</code>存储<code>resolveInject</code>函数的返回值。<code>resolveInject</code>函数调用时需要传入合并后的<code>inject</code>选项和实例对象<code>vm</code>。</p>
+<p>这个函数的作用应该是讲解<code>inject</code>选项。用过<code>inject</code>选项的同学应该都知道，<code>inject</code>选项中注入的属性是它所在实例组件的父组件或者更上一级的组件的<code>provide</code>选项提供的值。这个函数的作用是获取它所在组件的父组件中的<code>_provide</code>属性的值，实例组件的<code>_provide</code>属性是存储初始化后的<code>provide</code>选项。</p>
+<h3 id="resolveInject"><a href="#resolveInject" class="headerlink" title="resolveInject"></a><code>resolveInject</code></h3><p>查看<code>resolveInject</code>函数的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">resolveInject</span>(<span class="params">inject: any, vm: Component</span>): ?<span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (inject) &#123;</span><br><span class="line">    <span class="comment">// inject is :any because flow is not smart enough to figure out cached</span></span><br><span class="line">    <span class="keyword">const</span> result = <span class="built_in">Object</span>.create(<span class="literal">null</span>)</span><br><span class="line">    <span class="keyword">const</span> keys = hasSymbol ? <span class="built_in">Reflect</span>.ownKeys(inject) : <span class="built_in">Object</span>.keys(inject)</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先判断通过参数传入的<code>inject</code>是否存在，如果存在，才能继续下面的逻辑。</p>
+<p>声明变量<code>result</code>，它的初始值是一个空对象，它也是这个函数的返回值，它的作用是存储从父组件的<code>_provide</code>属性中获取的值。</p>
+<p>声明变量<code>keys</code>存储<code>inject</code>的<code>keys</code>，先判断当前宿主环境是否支持<code>Symbol</code>，如果支持的话，使用<code>Reflect.ownKeys</code>方法获取<code>keys</code>的值；如果不支持，使用<code>Object.keys</code>方法获取<code>keys</code>的值。</p>
+<p>再看下中间省略的代码，这里是一个<code>for</code>循环语句。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; keys.length; i++) &#123;</span><br><span class="line">  <span class="keyword">const</span> key = keys[i]</span><br><span class="line">  <span class="comment">// #6574 in case the inject object is observed...</span></span><br><span class="line">  <span class="keyword">if</span> (key === <span class="string">'__ob__'</span>) <span class="keyword">continue</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先看前面的代码，声明常量<code>key</code>缓存循环中的<code>key</code>值。</p>
+<p>首先判断<code>key</code>是不是<code>__ob__</code>属性，如果是的话，跳过这次循环，这行代码是为了解决 Vue 的<a href="https://github.com/vuejs/vue/issues/6574" target="_blank" rel="noopener">6574 issue</a>的，我猜测主要原因是因为<code>__ob__</code>属性是通过<code>Object.defineProperty</code>方法定义的，而这个属性是不能通过<code>Object.keys</code>方法获取到的，所以为了保持在不支持<code>Symbol</code>环境下时<code>keys</code>的一致性，才会跳过这个循环。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> provideKey = inject[key].from <span class="comment">// ! 从 from 中获取对于 provide 的 key</span></span><br></pre></td></tr></table></figure>
+
+<p>声明常量<code>provideKey</code>存储<code>inject[key]</code>的<code>from</code>属性，这个<code>from</code>属性就是父组件的<code>_provide</code>属性对应的<code>key</code>，从规范化<code>inject</code>选项的代码中我们知道，<code>inject</code>中的<code>from</code>属性存储它的来源属性的<code>key</code>值，另外，<code>inject</code>选项中的<code>key</code>值和这个<code>from</code>值不一定相同。</p>
+<p>示例代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">provide: &#123;</span><br><span class="line">  name: <span class="string">'Hale'</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 规范化前</span></span><br><span class="line">inject: &#123;</span><br><span class="line">  n: <span class="string">'name'</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 规范化后</span></span><br><span class="line">inject: &#123;</span><br><span class="line">  n: &#123;</span><br><span class="line">    <span class="keyword">from</span>: <span class="string">'name'</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取值</span></span><br><span class="line">n: <span class="string">'Hale'</span></span><br></pre></td></tr></table></figure>
+
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> source = vm</span><br><span class="line"><span class="keyword">while</span> (source) &#123;</span><br><span class="line">  <span class="comment">// ! 查找并获取父组件的 provide 的值</span></span><br><span class="line">  <span class="keyword">if</span> (source._provided &amp;&amp; hasOwn(source._provided, provideKey)) &#123;</span><br><span class="line">    result[key] = source._provided[provideKey] <span class="comment">// ! 注意：因为组件是先初始化 inject, 所以不会找到本身的 provide</span></span><br><span class="line">    <span class="keyword">break</span></span><br><span class="line">  &#125;</span><br><span class="line">  source = source.$parent <span class="comment">// ! 循环往上找</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>声明变量<code>source</code>缓存实例对象<code>vm</code>。然后就是一个<code>while</code>循环语句，它每次循环执行的代码是<code>source = source.$parent</code>，就是通过<code>$parent</code>属性一直在组件树中往上去寻找<code>source</code>。</p>
+<p>循环的结束条件是找到组件<code>source</code>中有<code>_provide</code>属性且属性里面有和<code>provideKey</code>相同名字的<code>key</code>，这说明找到了父组件提供的<code>key</code>值，这个值就是<code>source._provided[provideKey]</code>，然后把值存储到变量<code>result</code>中。</p>
+<p>这里有个问题，就是通过这样的方法去查找值，会不会找到实例本身定义的<code>provide</code>选项中的值呢？</p>
+<p>答案是不会的。因为初始化实例对象时，初始化<code>inject</code>选项比初始化<code>provide</code>的时间更早，所以在那个时候，实例组件还没有创建<code>_provide</code>属性，只能去父组件中去寻找。</p>
+<p>继续看下面的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 如果循环之后还是找不到值</span></span><br><span class="line"><span class="keyword">if</span> (!source) &#123;</span><br><span class="line">  <span class="comment">// ! 如果定义了默认值则使用默认值，函数类型的默认字需要求值</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="string">'default'</span> <span class="keyword">in</span> inject[key]) &#123;</span><br><span class="line">    <span class="keyword">const</span> provideDefault = inject[key].default</span><br><span class="line">    result[key] =</span><br><span class="line">      <span class="keyword">typeof</span> provideDefault === <span class="string">'function'</span></span><br><span class="line">        ? provideDefault.call(vm)</span><br><span class="line">        : provideDefault</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ! 找不到又没有默认值，非生产环境下报错</span></span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    warn(<span class="string">`Injection "<span class="subst">$&#123;key&#125;</span>" not found`</span>, vm)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断<code>source</code>是否存在，如果不存在，说明循环结束后还找到满足条件的父组件。</p>
+<p>这时候先判断<code>inject</code>选项的属性里面是否设置了<code>default</code>属性，也就是默认值。如果设置了默认值，声明常量<code>provideDefault</code>存储这个默认值，即<code>inject[key].default</code>。</p>
+<p>然后再判断这个默认值是不是一个函数，如果是函数，就执行函数求值，并把求值的结果赋值到<code>result</code>对象中，它的<code>key</code>还是以前的<code>key</code>，<code>vlaue</code>就是函数的求值结果。如果不是函数类型，直接赋值。</p>
+<p>如果找不到满足条件的父组件，又没有设置默认值，在非生产环境中会报错，提示找不到<code>inject</code>中<code>key</code>的值。</p>
+<p><code>resolveInject</code>函数讲解完毕，再次回到<code>initInjections</code>函数中，查看剩下的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ! 获取到 provide 的值后</span></span><br><span class="line"><span class="keyword">if</span> (result) &#123;</span><br><span class="line">  toggleObserving(<span class="literal">false</span>) <span class="comment">// ! 不监听 inject 选项的属性不是响应式的</span></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  toggleObserving(<span class="literal">true</span>) <span class="comment">// ! 恢复监听</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先判断是否获取到<code>provide</code>选项的值，获取到之后才能进行下面的逻辑。</p>
+<p>执行<code>toggleObserving(false)</code>代码把<code>shouleObserve</code>的值设置为<code>false</code>，在前面我们知道把<code>shouleObserve</code>设置为<code>false</code>时，就不会去创建监听器属性。也就是说不会把<code>inject</code>中的数据变成响应式数据，因为<code>inject</code>选项的数据不需要是响应式数据。</p>
+<p>这里中间省略了一些代码。</p>
+<p>在最后又执行<code>toggleObserving(true)</code>代码把<code>shouleObserve</code>的值重新设置为<code>true</code>，这样就不会影响到其他选项的数据变成响应式数据。</p>
+<p>下面看下中间的代码</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Object</span>.keys(result).forEach(<span class="function"><span class="params">key</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="comment">/* istanbul ignore else */</span></span><br><span class="line">  <span class="keyword">if</span> (process.env.NODE_ENV !== <span class="string">'production'</span>) &#123;</span><br><span class="line">    <span class="comment">// ! 实例代理 key，另外不能修改 inject 的数据，否则报错</span></span><br><span class="line">    defineReactive(vm, key, result[key], () =&gt; &#123;</span><br><span class="line">      warn(</span><br><span class="line">        <span class="string">`Avoid mutating an injected value directly since the changes will be `</span> +</span><br><span class="line">          <span class="string">`overwritten whenever the provided component re-renders. `</span> +</span><br><span class="line">          <span class="string">`injection being mutated: "<span class="subst">$&#123;key&#125;</span>"`</span>,</span><br><span class="line">        vm</span><br><span class="line">      )</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    defineReactive(vm, key, result[key]) <span class="comment">// ! 实例代理 key</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>Object.keys</code>获取<code>result</code>的<code>keys</code>的值，然后使用<code>forEach</code>遍历<code>keys</code>，再调用<code>defineReactive</code>函数使得实例对象<code>vm</code>代理<code>inject</code>上的<code>key</code>值。</p>
+<p><strong>注意</strong>，这里通过<code>defineReactive</code>定义的数据并不会变成响应式数据。因为前面已经把<code>shouleObserve</code>变量设置为<code>false</code>了。但是如果父组件的<code>provide</code>选项提供的值是一个响应式数据，那么注入的值也是响应式数据。</p>
+<p>另外，不能修改<code>inject</code>选项中的值，因为它的值来源于父组件，有点类似于<code>props</code>属性。如果修改了<code>inject</code>的值在非生产环境中会报错。</p>
+<p><strong>到这里，Vue 的初始化就暂时告一个段落了</strong>。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><p><a href="http://hcysun.me/vue-design/zh/" target="_blank" rel="noopener">Vue 技术内幕</a></p>
+</li>
+<li><p><a href="https://ustbhuangyi.github.io/vue-analysis/" target="_blank" rel="noopener">Vue 技术揭秘</a></p>
+</li>
+<li><p><a href="https://cn.vuejs.org/" target="_blank" rel="noopener">Vue 文档</a></p>
+</li>
+<li><p><a href="https://github.com/haledc/vue/tree/learn-vue" target="_blank" rel="noopener">Vue 源码学习分支</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190930-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8B%E5%88%9D%E5%A7%8B%E5%8C%96%E7%BB%88%E5%B1%80/" title="Vue2源码学习笔记之初始化终局">https://haledeng.com/blog/20190930-Vue2源码学习笔记之初始化终局/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/" rel="tag"># 源码学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190928-Vue2%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BProps/" rel="prev" title="Vue2源码学习笔记之Props">
+      <i class="fa fa-chevron-left"></i> Vue2源码学习笔记之Props
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20191005-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E5%AE%89%E8%A3%85/" rel="next" title="Vuex3源码学习笔记之Vuex的安装">
+      Vuex3源码学习笔记之Vuex的安装 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#initMethods"><span class="nav-number">1.</span> <span class="nav-text">initMethods</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#provide"><span class="nav-number">2.</span> <span class="nav-text">provide</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#inject"><span class="nav-number">3.</span> <span class="nav-text">inject</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#initInjections"><span class="nav-number">3.1.</span> <span class="nav-text">initInjections</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#resolveInject"><span class="nav-number">3.2.</span> <span class="nav-text">resolveInject</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

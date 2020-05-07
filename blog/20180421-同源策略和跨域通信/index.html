@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="同源策略定义什么是同源策略？ 同源策略（Same Origin Policy）是一种约定，它是浏览器最核心也最基本的安全功能。 如果缺少了同源策略，则浏览器的正常功能可能都会受到影响。 可以说 Web 是构建在同源策略基础之上的，浏览器只是针对同源策略的一种实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="同源策略和跨域通信">
+<meta property="og:url" content="https://haledeng.com/blog/20180421-%E5%90%8C%E6%BA%90%E7%AD%96%E7%95%A5%E5%92%8C%E8%B7%A8%E5%9F%9F%E9%80%9A%E4%BF%A1/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="同源策略定义什么是同源策略？ 同源策略（Same Origin Policy）是一种约定，它是浏览器最核心也最基本的安全功能。 如果缺少了同源策略，则浏览器的正常功能可能都会受到影响。 可以说 Web 是构建在同源策略基础之上的，浏览器只是针对同源策略的一种实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://haledeng.com/static/tongyuan.png">
+<meta property="article:published_time" content="2018-04-21T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:46:06.162Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="通信">
+<meta property="article:tag" content="跨域">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://haledeng.com/static/tongyuan.png">
+
+<link rel="canonical" href="https://haledeng.com/blog/20180421-%E5%90%8C%E6%BA%90%E7%AD%96%E7%95%A5%E5%92%8C%E8%B7%A8%E5%9F%9F%E9%80%9A%E4%BF%A1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>同源策略和跨域通信 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20180421-%E5%90%8C%E6%BA%90%E7%AD%96%E7%95%A5%E5%92%8C%E8%B7%A8%E5%9F%9F%E9%80%9A%E4%BF%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          同源策略和跨域通信
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-04-21 20:00:00" itemprop="dateCreated datePublished" datetime="2018-04-21T20:00:00+08:00">2018-04-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%80%9A%E4%BF%A1/" itemprop="url" rel="index"><span itemprop="name">通信</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>3.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="同源策略"><a href="#同源策略" class="headerlink" title="同源策略"></a>同源策略</h2><h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p>什么是同源策略？</p>
+<p>同源策略（Same Origin Policy）是一种约定，它是浏览器最核心也最基本的安全功能。</p>
+<p>如果缺少了同源策略，则浏览器的正常功能可能都会受到影响。</p>
+<p>可以说 Web 是构建在同源策略基础之上的，浏览器只是针对同源策略的一种实现。</p>
+<a id="more"></a>
+
+<p><img src="/static/tongyuan.png" alt=""></p>
+<p>同源即是指协议、域名、与端口都相同，</p>
+<p>不同源的客户端脚本(JavaScript、ActionScript)在没明确授权的情况下，不能读写对方的资源。</p>
+<h3 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h3><p>为了保证用户信息的安全，防止恶意的网站窃取数据</p>
+<h3 id="限制行为"><a href="#限制行为" class="headerlink" title="限制行为"></a>限制行为</h3><ul>
+<li><p>Cookie、LocalStorage 和 IndexDB 无法读取</p>
+</li>
+<li><p>DOM 无法获得</p>
+</li>
+<li><p>AJAX 请求不能发送</p>
+</li>
+</ul>
+<h2 id="跨域"><a href="#跨域" class="headerlink" title="跨域"></a>跨域</h2><h3 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h3><p>跨域，顾名思义，即是跨越、突破浏览器的同源限制，不同域之间相互请求资源</p>
+<h3 id="产生"><a href="#产生" class="headerlink" title="产生"></a>产生</h3><p>因为有同源策略的限制，一般情况下，不同域之间是无法通信。</p>
+<p>但是有时候我们不得不突破同源策略的限制，在不同的域之间进行资源请求。</p>
+<p>一个简单的例子:</p>
+<p>我的一个服务器(服务器 A)上空间容量有限且不能扩充，在上面存放了一些资源后，</p>
+<p>想要再存放一些图片已经放不下去了，没方法只好把图片放在另外一个服务器上（服务器 B）了。</p>
+<p>某个时候因为某个原因，服务器 A 的一个网页需要引用一张图片，但是这个图片在服务器 B 上，怎么办呢？</p>
+<p>因为两个服务器的协议，IP 地址都是不一样的，根据浏览器的同源策略限制，它们之间是无法访问的呀？</p>
+<p>怎么办呢？这个时候跨域通信就产生了。</p>
+<p>如果经常浏览网页，我们会发现大部分网站上页面和图片是分开放在不同的服务器上的，然后进行跨域请求资源。</p>
+<p>大家还记得吗？ HTML 中有个 src 属性就是支持跨域通信的，一些标签比如 img，script 都有这个属性, 可以跨域引用资源。</p>
+<p>另外，link 标签的 href 属性也支持跨域。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">"xxx"</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"xxx"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"stylesheet"</span> <span class="attr">href</span>=<span class="string">"xxx"</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>跨域打破了浏览器的同源策略，可能会产生一些安全的问题;</p>
+<p>所以，所有的跨域请求都必须经过信息提供方允许才能进行，</p>
+<p>如果未经允许就可跨域获取资源，那么一定是同源策略出现了漏洞。</p>
+<h2 id="跨域通信"><a href="#跨域通信" class="headerlink" title="跨域通信"></a>跨域通信</h2><p>理解了同源策略和跨域后，下面讲一下跨域通信的几种常用方法。</p>
+<h3 id="JSONP"><a href="#JSONP" class="headerlink" title="JSONP"></a>JSONP</h3><h4 id="定义-2"><a href="#定义-2" class="headerlink" title="定义"></a>定义</h4><p>JSONP 利用 script 标签的 src 属性可以跨域的特性，动态创建一个 script 标签，</p>
+<p>标签引用跨域服务器的一段 js 代码，这段代码是一个回调函数，回调函数里面的参数放入所需的数据或者资源，</p>
+<p>因为回调函数的名字和本地的函数名字一样，所以引用这段代码后就直接调用了本地的函数，输出内容。</p>
+<h4 id="代码示例"><a href="#代码示例" class="headerlink" title="代码示例"></a>代码示例</h4><p>本地代码文件：<code>local.html</code></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">var</span> localHandler = <span class="function"><span class="keyword">function</span> <span class="params">(data)</span> </span>&#123;</span></span><br><span class="line">    alert(data)</span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">scr</span>=<span class="string">"跨域服务器/remote.js"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>跨域服务器代码文件： <code>remote.js</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">localHandler(&#96;哈哈，我是参数也是你需要的data！&#96;)</span><br></pre></td></tr></table></figure>
+
+<p>上面是一个最简单的 jsonp 代码示例了。也许有人会问：一般服务器的数据会有很多的跨域访问，</p>
+<p>怎么让远程服务器知道你要调用的本地函数名称是什么呀？</p>
+<p>其实 JSONP 跨域请求一般是需要传一个 callback 函数给服务器的。</p>
+<h4 id="场景实例"><a href="#场景实例" class="headerlink" title="场景实例"></a>场景实例</h4><p>实例场景：李明同学想要查询期末考试的成绩，他的学号是 030206。</p>
+<p>本地代码文件：<code>local.html</code></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript">  <span class="comment">// 创建本地函数</span></span></span><br><span class="line"><span class="actionscript">  <span class="keyword">var</span> searchScore = <span class="function"><span class="keyword">function</span> <span class="params">(data)</span> </span>&#123;</span></span><br><span class="line">    alert(</span><br><span class="line"><span class="actionscript">      data<span class="class">.<span class="keyword">class</span> +</span></span></span><br><span class="line">        data.name +</span><br><span class="line"><span class="actionscript">        <span class="string">'同学的成绩是：语文：'</span> +</span></span><br><span class="line">        data.score.chinese +</span><br><span class="line"><span class="actionscript">        <span class="string">'; 数学：'</span> +</span></span><br><span class="line">        data.score.math +</span><br><span class="line"><span class="actionscript">        <span class="string">'。'</span></span></span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line"><span class="actionscript">  <span class="comment">// 需要提供服务的url，传入id和callback函数</span></span></span><br><span class="line"><span class="actionscript">  <span class="keyword">var</span> url = <span class="string">'跨域服务器/score.php?id=030206&amp;callback=searchScore'</span></span></span><br><span class="line"></span><br><span class="line"><span class="actionscript">  <span class="comment">// 新建一个script标签</span></span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">'script'</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="actionscript">  <span class="comment">// 设置script标签的src值为url</span></span></span><br><span class="line"><span class="actionscript">  script.setAttribute(<span class="string">'src'</span>, url)</span></span><br><span class="line"></span><br><span class="line"><span class="actionscript">  <span class="comment">// 把新建的script标签添加到在head标签上</span></span></span><br><span class="line"><span class="javascript">  <span class="built_in">document</span>.getElementsByTagName(<span class="string">'head'</span>)[<span class="number">0</span>].appendChild(script)</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>上面代码相当于在 head 标签下面生成了一个 script 标签</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"跨域服务器/score.php?id=030205&amp;callback=searchScore"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>服务器会根据这个 url，就会返回一段 js 代码，代码如下：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">searchScore(&#123;</span><br><span class="line">  class: '三年级二班',</span><br><span class="line">  name: <span class="string">'李明'</span>,</span><br><span class="line">  score: &#123;</span><br><span class="line">    chinese: <span class="number">80</span>,</span><br><span class="line">    math: <span class="number">85</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>然后这段代码就会执行上一个 script 代码中的<code>searchScore()</code>这个函数，页面弹出警告框：</p>
+<p><code>三年级二班李明同学的成绩是：语文：80；数学：85。</code></p>
+<p>至于服务器的输出是怎么实现的呢，这里说下原理；</p>
+<p>服务器接受到 id 和 callback 后，会先通过 id 查询到这个同学的成绩，</p>
+<p>然后用把查询到的成绩和 callback 函数名（回调函数）拼接成一段 js 代码传出去。</p>
+<p>服务器实现的功能就是查询和拼接字符串代码，然后把代码<code>return</code>出去。</p>
+<h3 id="CORS"><a href="#CORS" class="headerlink" title="CORS"></a>CORS</h3><p>CORS 全称是”跨域资源共享”（Cross-origin resource sharing），是一个 W3C 的标准；它允许<code>XMLHttpRequest</code>跨域请求，从而克服了 AJAX 只能同源使用的限制。</p>
+<p>CORS 只需要在服务器端设置即可，客户端不需要设置；</p>
+<p>客户端只需要支持 CORS 这个功能就可以了，目前 IE10 以上的浏览器和现代主流浏览器都支持。</p>
+<p>服务器代码如下, 不同后端语言写法可能不一样:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 必需，值若为 * 而为支持所有的域名请求，不建议这样写</span></span><br><span class="line">response.setHeader(<span class="string">'Access-Control-Allow-Origin'</span>, <span class="string">'http://a.com, http://b.com'</span>)</span><br><span class="line"><span class="comment">// 如果浏览器有Access-Control-Request-Headers字段，则该字段必需</span></span><br><span class="line">response.setHeader(<span class="string">'Access-Control-Allow-Header'</span>, <span class="string">'X-Requested-With'</span>)</span><br><span class="line"><span class="comment">// 必需，支持请求的方法</span></span><br><span class="line">response.setHeader(</span><br><span class="line">  <span class="string">'Access-Control-Allow-Methods'</span>,</span><br><span class="line">  <span class="string">'PUT,POST,GET,DELETE,OPTIONS'</span></span><br><span class="line">)</span><br><span class="line"><span class="comment">// 可选，接受跨域的cookie</span></span><br><span class="line">response.setHeader(<span class="string">'Access-Control-Allow-Credentials'</span>, <span class="string">'true'</span>)</span><br><span class="line"><span class="comment">// ... 其他设置</span></span><br></pre></td></tr></table></figure>
+
+<p>PS：django 可以下载一个第三方库<code>django-cors-headers</code>，然后配置下就可以轻松提供跨域服务了。</p>
+<h3 id="WebSocket"><a href="#WebSocket" class="headerlink" title="WebSocket"></a>WebSocket</h3><p>WebSocket 是一种通信协议，该协议不实行同源策略，只要服务器支持就可以实现跨域通信。</p>
+<p>浏览器发出的 WebSocket 请求头信息中，会带有一个 Origin 字段,表示该请求的请求源。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Origin: http://www.example.com</span><br></pre></td></tr></table></figure>
+
+<p>正是因为有了这个字段，WebSocket 才不实行同源策略。</p>
+<p>服务器会根据这个字段，判断是否允许本次通信。</p>
+<p>如果服务器的白名单中有这个域名，就可以实现跨域通信了。</p>
+<h3 id="postMessage"><a href="#postMessage" class="headerlink" title="postMessage"></a>postMessage</h3><p>HTML5 新增 postMessage 方法，postMessage 可以实现跨文档消息传输。</p>
+<p>postMessage 兼容性：IE8 以上浏览器和现在主流浏览器都支持。</p>
+<p>postMessage 方法是通过绑定 window 的 message 事件来监听发送跨文档消息传输内容。</p>
+<p>代码示例：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 窗口A(http://A.com)向跨域的窗口B(http://B.com)发送信息</span></span><br><span class="line">BWindow.postMessage(<span class="string">'data'</span>, <span class="string">'http://B.com'</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 在窗口B中监听message事件</span></span><br><span class="line">AWindow.addEventListener(</span><br><span class="line">  <span class="string">'message'</span>,</span><br><span class="line">  <span class="function"><span class="keyword">function</span> (<span class="params">event</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(event.origin) <span class="comment">// http://A.com 消息源的URI</span></span><br><span class="line">    <span class="built_in">console</span>.log(event.source) <span class="comment">// AWindow 消息源</span></span><br><span class="line">    <span class="built_in">console</span>.log(event.data) <span class="comment">// data 数据</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="literal">false</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>如果是窗口 B 向窗口 A 发送消息呢，反过来原理也是一样的。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>跨域通信用得最多的就是 JSONP 和 CORS 了，JSONP 只支持 GET 请求，CORS 允许任何类型的请求。</p>
+<p>不过 JSONP 的支持会更好一些，几乎所有的浏览器都支持。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20180421-%E5%90%8C%E6%BA%90%E7%AD%96%E7%95%A5%E5%92%8C%E8%B7%A8%E5%9F%9F%E9%80%9A%E4%BF%A1/" title="同源策略和跨域通信">https://haledeng.com/blog/20180421-同源策略和跨域通信/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E9%80%9A%E4%BF%A1/" rel="tag"># 通信</a>
+              <a href="/tags/%E8%B7%A8%E5%9F%9F/" rel="tag"># 跨域</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20180418-%E5%89%8D%E5%90%8E%E7%AB%AF%E9%80%9A%E4%BF%A1%E4%B9%8BAJAX/" rel="prev" title="前后端通信之AJAX">
+      <i class="fa fa-chevron-left"></i> 前后端通信之AJAX
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20180425-TCP%E5%8D%8F%E8%AE%AE%E7%9A%84%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B%E5%92%8C%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B/" rel="next" title="TCP协议的三次握手和四次挥手">
+      TCP协议的三次握手和四次挥手 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#同源策略"><span class="nav-number">1.</span> <span class="nav-text">同源策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#定义"><span class="nav-number">1.1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#目的"><span class="nav-number">1.2.</span> <span class="nav-text">目的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#限制行为"><span class="nav-number">1.3.</span> <span class="nav-text">限制行为</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#跨域"><span class="nav-number">2.</span> <span class="nav-text">跨域</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#定义-1"><span class="nav-number">2.1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#产生"><span class="nav-number">2.2.</span> <span class="nav-text">产生</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#跨域通信"><span class="nav-number">3.</span> <span class="nav-text">跨域通信</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JSONP"><span class="nav-number">3.1.</span> <span class="nav-text">JSONP</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#定义-2"><span class="nav-number">3.1.1.</span> <span class="nav-text">定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#代码示例"><span class="nav-number">3.1.2.</span> <span class="nav-text">代码示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#场景实例"><span class="nav-number">3.1.3.</span> <span class="nav-text">场景实例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CORS"><span class="nav-number">3.2.</span> <span class="nav-text">CORS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WebSocket"><span class="nav-number">3.3.</span> <span class="nav-text">WebSocket</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#postMessage"><span class="nav-number">3.4.</span> <span class="nav-text">postMessage</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

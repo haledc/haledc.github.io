@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="风格规范前端的代码风格规范主要还是 JavaScript 的风格规范 (JavaScript Style Guide)。JavaScript 比较出名的风格规范主要有 standard、 airbnb 、google等等。我们可以借助一些工具比如 ESLint、 TSLint、Prettier 来规范或者美化代码，在编辑器上也可以自定义风格规范来格式化代码，使得代码格式统一美观。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="代码风格浅谈">
+<meta property="og:url" content="https://haledeng.com/blog/20190523-%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC%E6%B5%85%E8%B0%88/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="风格规范前端的代码风格规范主要还是 JavaScript 的风格规范 (JavaScript Style Guide)。JavaScript 比较出名的风格规范主要有 standard、 airbnb 、google等等。我们可以借助一些工具比如 ESLint、 TSLint、Prettier 来规范或者美化代码，在编辑器上也可以自定义风格规范来格式化代码，使得代码格式统一美观。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://haledeng.com/blog/_static/gitCz.png">
+<meta property="article:published_time" content="2019-05-23T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:54:31.103Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="代码风格">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://haledeng.com/blog/_static/gitCz.png">
+
+<link rel="canonical" href="https://haledeng.com/blog/20190523-%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC%E6%B5%85%E8%B0%88/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>代码风格浅谈 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20190523-%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC%E6%B5%85%E8%B0%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          代码风格浅谈
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-05-23 20:00:00" itemprop="dateCreated datePublished" datetime="2019-05-23T20:00:00+08:00">2019-05-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC/" itemprop="url" rel="index"><span itemprop="name">代码风格</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>8.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="风格规范"><a href="#风格规范" class="headerlink" title="风格规范"></a>风格规范</h2><p>前端的代码风格规范主要还是 JavaScript 的风格规范 (JavaScript Style Guide)。JavaScript 比较出名的风格规范主要有 <a href="https://github.com/standard/standard" target="_blank" rel="noopener">standard</a>、 <a href="https://github.com/airbnb/javascript" target="_blank" rel="noopener">airbnb</a> 、<a href="https://google.github.io/styleguide/jsguide.html" target="_blank" rel="noopener">google</a>等等。我们可以借助一些工具比如 ESLint、 TSLint、Prettier 来规范或者美化代码，在编辑器上也可以自定义风格规范来格式化代码，使得代码格式统一美观。</p>
+<a id="more"></a>
+
+<p>其实，代码看多了（指源码）、写多了，自然而然就能形成自己的代码风格。在团队中，制定一套符合自己团队的开发规范，对于团队的开发工作至关重要。</p>
+<p>下面谈谈一些自己的代码风格，不仅仅是 JavaScript，什么都可以聊一下。</p>
+<h2 id="编辑器相关"><a href="#编辑器相关" class="headerlink" title="编辑器相关"></a>编辑器相关</h2><p>之前一直在使用 JetBrain 公司的 WebStorm 编辑器，但是在今年已经全面改用了微软的 VSCode 编辑器，现在也在慢慢已经习惯并依赖上了 VSCode ，对 VSCode 也越来越熟悉。</p>
+<p>在特推上的一些大神展示的代码很多都是用 VSCode 的，然后国内的掘金、知乎社区上也越来越多人在讨论 VSCode，我也开始尝试者使用 VSCode。</p>
+<p>用 VSCode 的一开始是写博客内容或者一些笔记，博客文章使用的是 markdown 格式，VSCode 天生就对 Markdown 支持非常好，特别是比 WebStorm 的预览效果好多了。WebStorm 一开始对 Markdown 的预览还好，后面不知道怎么搞的，预览的页面不清晰，非常模糊。</p>
+<p>这时候写代码还是用 WebStorm，毕竟它的智能补全很好用，直到后面发现 VSCode 的插件系统是如此强大，好多插件完全可以替代 WebStorm 的功能，而且定制化更强，也有很多非常漂亮的主题，后面就逐渐改用 VSCode，然后再也离不开它了。比如<code>CodeRunner</code> 插件可以直接运行各种语言的代码，非常方便。小程序插件 <code>minapp</code>，让我写小程序更好方便，这在 WebStorm 上是无法实现的。</p>
+<p>前端代码格式化插件<code>Prettier</code>，美化我的前端代码文件比如<code>Html</code>、<code>CSS</code>、<code>JavaScrip</code> ，甚至是 Vue 文件和 或者 Markdown 文件。虽然 WebStorm 也可以实现相同的功能，但是需要你去详细的配置。VSCode 一个插件就搞定了。之后，我的项目基本上都是采用<code>Prettier</code>美化代码。</p>
+<p>一些非常美观的主题，图标，还有自定义的字体，都让我爱不释手。</p>
+<p>其他的功能插件比如同步配置<code>Setting sync</code> 和 LeetCode 插件，更是让我离不开它。</p>
+<p>VSCode 不仅有强大的插件系统，还自带调试功能，可以轻松调试代码。</p>
+<p>另外最重要的一点，VSCode 是开源的、完全免费的软件，再也不用去隔三岔五的去找 WebStorm 的服务许可。</p>
+<p>而且 VSCode 是微软主推的 Github 明星项目，全世界的开发者去更新和维护它，以后只会越来越好。</p>
+<p>有的团队要求统一使用编辑器，相信 VSCode 会是个很好的选择。</p>
+<h2 id="文件结构相关"><a href="#文件结构相关" class="headerlink" title="文件结构相关"></a>文件结构相关</h2><h3 id="Yarn"><a href="#Yarn" class="headerlink" title="Yarn"></a>Yarn</h3><p>前端项目的工程化离不开 Node.js，它自带的包管理工具 NPM，但是感觉并不好用。我一般会使用脸书出品的 Yarn 工具来管理包。Yarn 的安装包的速度也比 NPM 快，而且提示信息更友好，也更安全。</p>
+<h3 id="组件化"><a href="#组件化" class="headerlink" title="组件化"></a>组件化</h3><p>现在前端的三大框架 Vue、React、Angular 提倡经常组件化开发，把页面切分成一个个组件，提高开发效率和可维护性。对于组件，我有自己的风格。</p>
+<p>比如组件的命名，我比较喜欢 React 对于组件规定，组件的名字必须采用大写的驼峰形式，在页面引入组件时，也采用大写的驼峰的标签名，这样可以明确的和一般标签区分开来，可读性更高。后面当你看到大写的驼峰名字时，就知道这是一个组件，这样可以更好的查找组件。</p>
+<p>如果组件是以文件夹来区分，文件夹名称和组件的名称最好写成一样的，这样单独打开组件文件时，就可以清楚的知道这是一个什么组件，然后额外创建一个索引文件<code>index.js</code>，来导出组件文件，这样的话，再引用这个组件的时候就不要写两次名称了（文件夹名称和组件名称）。</p>
+<p>React 的组件就是 JSX，它和样式一般是分离的，除非你使用“styled-jsx”，把样式写在 JSX 里面，所以最好采用文件夹的形式来区别不同的组件。</p>
+<p>而 Vue 有独立的 <code>.vue</code> 格式的文件，可以把结构、样式、交互的代码都写在一起，实现高内聚，所以以文件的形式来区分就可以了。如果组件中需要引入本地图片，可以把图片和组件放在同一个文件夹中，这时以文件夹的形式来区分会比较好。当然也可以把所有的本地图片统一放在一个文件夹中去管理，这样其实也不错。</p>
+<h3 id="前端框架"><a href="#前端框架" class="headerlink" title="前端框架"></a>前端框架</h3><p>使用 <code>@vue/cli</code> 脚手架生产的文件目录中，默认是使用 views 目录来存储页面组件的， 而 components 目录存储 一般组件的，还有 assets 存储其他的比如全局样式文件或者辅助函数文件。我觉得这样的文件结构非常清晰，值得借鉴。</p>
+<p>在状态管理方面，Vue 的状态是集中在 store 的文件夹中统一管理的，因为它的状态管理库 Vuex 是高度集成和封装的，放在一起统一管理很方便，如果状态比较复杂，还可以使用模块来分割不同的状态。</p>
+<p>而 React 的状态管理却不一样，因为 Redux 风格的代码写起来非常啰嗦，如果都集中到一个文件夹去管理，这个文件夹里面的文件会非常多，然后每个文件的代码也会很多。这时候，可以根据功能或者页面的不同，把状态文件放在每个页面下面去管理可，这样可能会更好一些。</p>
+<h3 id="命名"><a href="#命名" class="headerlink" title="命名"></a>命名</h3><p>一个好的命名不仅可以很好的诠释代码的作用，还能让人耳目一新。</p>
+<h4 id="文件命名"><a href="#文件命名" class="headerlink" title="文件命名"></a>文件命名</h4><p>组件文件或者组件所在的文件夹建议采用大驼峰类型来命名，而其他的文件则采用小写字母或者小写字母加连字符来命名，如<code>Home.vue</code>、<code>request-api.js</code>。</p>
+<p>当然，也可以统一采用小写字母或者小写字母加连字符来命名所有的文件，如<code>home.vue</code>、<code>request-api.js</code>。但是组件在代码中的引用还是建议使用大驼峰的类型，这样可以更好的和普通的标签区分开来。</p>
+<h4 id="变量命名"><a href="#变量命名" class="headerlink" title="变量命名"></a>变量命名</h4><p>代码中变量的命名，JavaScript 规范一般是推荐是使用小驼峰命名方式。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> newObj = &#123;&#125;</span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">test1</span>(<span class="params"></span>) </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是，命名类或者构造函数时需要使用大驼峰命名方式。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Person</span>(<span class="params">name, age</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.name = name</span><br><span class="line">  <span class="keyword">this</span>.age = age</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Person</span> </span>&#123;</span><br><span class="line">  <span class="keyword">constructor</span>(name, age) &#123;</span><br><span class="line">    <span class="keyword">this</span>.name = name</span><br><span class="line">    <span class="keyword">this</span>.age = age</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后，对于一些常量或者状态类型可以使用大写字母加下划线的命名方式。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> MAX_HEIGHT = <span class="number">300</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> SET_SINGER = <span class="string">'SET_SINGER'</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="代码风格相关"><a href="#代码风格相关" class="headerlink" title="代码风格相关"></a>代码风格相关</h2><p>我的前端项目一般是通过 ESLint 和 Prettier 来规范代码风格的。在 VSCode 中需要下载 2 个插件, 插件名字是“ESLint” 和“Prettier - Code formatter”，这两个都是非常流行的插件，下载量都达到百万以上。</p>
+<h3 id="HTML"><a href="#HTML" class="headerlink" title="HTML"></a>HTML</h3><p>采用 Prettier 推荐的的风格。在标签属性很多时导致标签超过一定的长度时，会把标签的属性分行。如果属性较多但标签长度不长时不分行。这样就可以在节约空间和可读性中之间达到一个平衡。长度是由 Prettier 来定义的，这个长度是比较合理的。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 属性太多导致标签太长属性分行 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">transition</span></span></span><br><span class="line"><span class="tag">  <span class="attr">name</span>=<span class="string">"normal"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">enter</span>=<span class="string">"enter"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">after-enter</span>=<span class="string">"afterEnter"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">leave</span>=<span class="string">"leave"</span></span></span><br><span class="line"><span class="tag">  @<span class="attr">after-leave</span>=<span class="string">"afterLeave"</span></span></span><br><span class="line"><span class="tag">&gt;</span></span><br><span class="line">  <span class="comment">&lt;!-- other tag --&gt;</span></span><br><span class="line">  <span class="comment">&lt;!-- 属性比较多但是标签不长不分行 --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">img</span> <span class="attr">width</span>=<span class="string">"100%"</span> <span class="attr">height</span>=<span class="string">"100%"</span> <span class="attr">:src</span>=<span class="string">"currentSong.image/&gt;</span></span></span><br><span class="line"><span class="tag"><span class="string">&lt;/transition&gt;</span></span></span><br></pre></td></tr></table></figure>
+
+<h3 id="CSS-Stylus-Scss"><a href="#CSS-Stylus-Scss" class="headerlink" title="CSS / Stylus / Scss"></a>CSS / Stylus / Scss</h3><p>现在直接写 CSS 的代码比较少，一般都写 Stylus 或者 Scss 代码。</p>
+<p>Stylus 是 Node 社区推出的 CSS 预处理器，语法灵活简单。另外，在格式上也可以设置两种不同的风格：</p>
+<ul>
+<li><p>极简风格，没有大括号，没有分号，甚至在属性名和属性之间也没有冒号，只用空格隔开。</p>
+</li>
+<li><p>正常风格，和极简风格完全相反，有大括号、分号和冒号。这种风格有点类似于 Scss，如果你使用这种格式，再加上 Scss 的关键字，就可以转换成 Scss 文件。</p>
+</li>
+</ul>
+<p>当然你也可以自定义格式，我喜欢取两者之间的设置，保留了冒号，但是去掉了分号和大括号，这样可读性更好，也很节省空间。</p>
+<p>因为我现在主要使用 VSCode 编辑器，安装了“Manta’s Stylus Supremacy”插件，这样插件可以设置 Stylus 的格式，不但可以设置一般的 Stylus 文件，还可以设置 Vue 文件中的 Stylus 代码的风格，只需要在 Vue 的插件 Vetur 中设置 Stylus 的格式化工具为“stylus-supremacy”即可。</p>
+<p>下面是我的 Stylus 配置</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"stylusSupremacy.insertBraces"</span>: <span class="literal">false</span>, <span class="comment">// 去大括号，默认是 true</span></span><br><span class="line">  <span class="attr">"stylusSupremacy.insertSemicolons"</span>: <span class="literal">false</span>, <span class="comment">// 去分号，默认是 true</span></span><br><span class="line">  <span class="attr">"stylusSupremacy.insertColons"</span>: <span class="literal">false</span> <span class="comment">// 去冒号，默认是 true，如果不去冒号，删掉这条设置即可</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Sass 在第三个版本时改名 Scss，全面兼容原生的 CSS 代码，它是目前最流行、最多人使用的 CSS 预处理器，功能非常强大激进，编辑器的支持也很好，很多流行的 UI 库编写 CSS 代码时也使用它。Sass 的底层一开始是使用 Ruby 语言编写的，所以使用它时需要安装 Ruby 语言环境，后面别的社区也使用了其他语言来实现它，其中 Node 社区对应的库的名称是<code>node-sass</code>，不过这个库不好安装，经常会安装失败，后面社区又使用<code>dart</code>语言来实现它，这个库的名称是<code>dart-sass</code>，这是源码库，使用这个库编译后的<code>sass</code>很好安装，而且 Webpack 中编译的 Loader：<code>sass-loader</code>也可以依赖这个库，终于不用再安装<code>node-sass</code>了。</p>
+<p>Scss 在 VScode 编辑器中支持非常好，可以直接使用 Prettier 插件来格式化代码，另外在 Vue 文件中的支持也比 Stylus 更好，可以显示代码中设置的各种颜色。React 官方脚手架只支持这个 CSS 预处理。非常推荐使用这个预处理器，现在编写 CSS 也主要使用这个它。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install sass  <span class="comment"># 安装 dart-sass 编译好的 sass 库</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="JavaScript"><a href="#JavaScript" class="headerlink" title="JavaScript"></a>JavaScript</h3><p>还是采用 Prettier 推荐的风格，Prettier 真是个神器。不过我一般会添加两个自定义设置，可以在 VSCode 的配置文件中添加下面的配置:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"prettier.semi"</span>: <span class="literal">false</span>,</span><br><span class="line">  <span class="attr">"prettier.singleQuote"</span>: <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果你的项目中使用 ESLint 检查代码风格，你需要新建一个文件 <code>.prettierrc</code>定制代码风格</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"semi"</span>: <span class="literal">false</span>,</span><br><span class="line">  <span class="attr">"singleQuote"</span>: <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这两个设置的作用分别是去掉分号和使用单引用。</p>
+<p>其实 JavaScript 不加分号是完全没问题的，编辑器和插件会帮我们自动处理。比如在每行开头使用了方括号<code>[]</code>或者圆括号<code>()</code>，使用 Prettier 插件格式化代码，编辑器会自动在它们前面加上分号<code>;</code>。</p>
+<p>使用单引号而不是双引号是因为在 JavaScript 中单引号和双引号并没有本质区别。使用单引号可以不用去按 <code>shift</code>，一定程度上减少了工作量。</p>
+<p>如果你想要在 Vue 文件中的 JavaScript 部分也使用这样的风格的化，可以在 VSCode 的配置文件中添加下面代码，在配置之前需要先安装“vetur”插件</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"vetur.format.defaultFormatterOptions"</span>: &#123;</span><br><span class="line">    <span class="attr">"prettier"</span>: &#123;</span><br><span class="line">      <span class="attr">"semi"</span>: <span class="literal">false</span>,</span><br><span class="line">      <span class="attr">"singleQuote"</span>: <span class="literal">true</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Vue"><a href="#Vue" class="headerlink" title="Vue"></a>Vue</h3><p>Vue 是我最熟悉的前端框架，一般在使用官方脚手架创建项目时，我会选项 ESLint 和 Prettier 来规范和美化代码，然后再重新定制下 Prettier，即<strong>不使用分号</strong>和<strong>使用单引号</strong>。</p>
+<h3 id="React"><a href="#React" class="headerlink" title="React"></a>React</h3><p>如果是你自己搭建 React 环境，也可以使用 ESLint 和 Prettier 来规范和美化代码。</p>
+<p>如果使用官方的脚手架“create-react-app”创建的项目，它统一采用的 <code>react-app</code>风格的 ESLint 规范和美化代码，这个风格是非常宽松的，对于 Prettier 风格的代码不会排斥。如果你的 VSCode 编辑器已经安装 Prettier 插件 ，就可以用来格式化 React 代码。当然，你也可以添加 Prettier 规范到 ESLint 配置中。</p>
+<h3 id="Node"><a href="#Node" class="headerlink" title="Node"></a>Node</h3><p>使用 Node 可以为前端文件配置后端的服务器时，我一般会把 Node 的文件放在前端项目中，这样 Node 的文件也能先享用前端设置的格式风格规范代码。</p>
+<p>如果使用一些手脚架工具搭建项目的，大部分脚手架也是使用 ESLint 和 Prettier 来规范和美化代码，然后再定制一下自己的风格即可。</p>
+<p>如果是自己搭建的 Node 项目，可以手动配置 ESLint 和 Prettier ，配置方法如下。</p>
+<p>首先，安装依赖</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn add eslint eslint-config-prettier eslint-plugin-prettier -D</span><br></pre></td></tr></table></figure>
+
+<p>然后，编辑配置文件 <code>.eslintrc</code></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"root"</span>: <span class="literal">true</span>,</span><br><span class="line">  <span class="attr">"parserOptions"</span>: &#123;</span><br><span class="line">    <span class="attr">"ecmaVersion"</span>: <span class="number">2018</span>,</span><br><span class="line">    <span class="attr">"sourceType"</span>: <span class="string">"module"</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">"env"</span>: &#123;</span><br><span class="line">    <span class="attr">"node"</span>: <span class="literal">true</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">"extends"</span>: [<span class="string">"plugin:prettier/recommended"</span>],</span><br><span class="line">  <span class="attr">"rules"</span>: &#123;</span><br><span class="line">    <span class="comment">// other rules</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>最后，定制个人风格，创建并编辑配置文件<code>.prettierrc</code></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"semi"</span>: <span class="literal">false</span>,</span><br><span class="line">  <span class="attr">"singleQuote"</span>: <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="关于注释"><a href="#关于注释" class="headerlink" title="关于注释"></a>关于注释</h3><p>JavaScript 的注释主要有两种，单行的注释 <code>//</code> 和多行注释 <code>/* */</code>。</p>
+<p>一般我喜欢使用单行的注释<code>//</code>，占用空间比较小，并且会把注释写在代码的右边，只有代码很长才会写在代码的上一行。</p>
+<p>多行注释<code>/* */</code>一般用于注释函数、类、各种语句等代码块，特别是注释函数的参数和返回值非常方便。不过我还是喜欢用单行注释，因为多行注释太占用空间了，除非需要特别注释参数。</p>
+<p>另外，单行注释 <code>//</code> 也可以注释函数等代码块或者多行代码，只需要多写几行 <code>//</code> 就可以了，即使这样也比 <code>/* */</code> 更节省空间。</p>
+<p>为了可读性更强，<strong>英文单词和汉字之间用空格隔开</strong>，<strong>数字和汉字之间用空格隔开</strong>，在 Markdown 中使用 <code>prettier</code>插件可以很好美化我们编写的内容，这个插件会帮我们分隔开。但是，在代码文件的注释中，就只能靠我们自己去分隔了。</p>
+<h2 id="Github-相关"><a href="#Github-相关" class="headerlink" title="Github 相关"></a>Github 相关</h2><p>Git 是代码版本控制软件，Github 是著名的 代码托管平台，这个平台所使用的就是 Git 控制软件版本的。</p>
+<p>现在学编程的同学或者已经有工作的程序员，基本上都会在 GitHub 或者其他类似的平台上注册账号，建立自己的代码托管仓库，分享自己的代码或者和他人进行交流和学习。</p>
+<p>我们每次为自己的仓库提交或者更新代码的时候，都会提交一条 Commit Message，用来记录我们提交的信息，之以后就可以很好的查询这些信息了。</p>
+<p>如果是个人的项目的仓库提交代码信息时，按照自己想法提交信息即可，比如提交 update、第一次提交等信息。像怎么写就怎么写，这都没有关系。但是如果想把项目做好点，就不能这样随便提交信息，应该要规范一点。</p>
+<p>怎么规范呢？借助工具来规定提交的信息的格式和内容，使得提交的信息更加规范，可读性更强。可能每个公司或者团队都有一套自己的规范，这里我介绍下我自己的规范，我使用的是 Angular 团队的规范，需要使用第三方库来规范提交的信息。下面是使用的步骤。</p>
+<p>首先，安装依赖</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn add commitizen cz-conventional-changelog</span><br></pre></td></tr></table></figure>
+
+<p>配置文件，在 <code>package.JavaScripton</code>中：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">"script": &#123;</span><br><span class="line">    ...,</span><br><span class="line">    "commit": "git-cz",</span><br><span class="line">&#125;,</span><br><span class="line">"config": &#123;</span><br><span class="line">    "commitizen": &#123;</span><br><span class="line">      "path": "node_modules/cz-conventional-changelog"</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后当你提交 commit 的时候，输入命令后，会出现下面的提示界面</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn commit</span><br></pre></td></tr></table></figure>
+
+<p><img src="../_static/gitCz.png" alt=""></p>
+<p>上面的类型分别由以下的类型组成：</p>
+<ul>
+<li>feat: 新特性</li>
+<li>fix: 修改问题</li>
+<li>docs: 文档相关</li>
+<li>style: 代码风格相关</li>
+<li>refactor: 代码重构</li>
+<li>pref: 性能优化相关</li>
+<li>test: 测试相关</li>
+<li>build: 构建相关</li>
+<li>ci: CI 相关</li>
+<li>chore: 其他修改, 不包括 src 和 test</li>
+<li>revert: 版本回溯相关</li>
+</ul>
+<p>此时你通过上下方向键选择对应的类型，然后根据提示输入内容，比如你选择的是“feat”，之后在“short message” 选项时填写“add article”信息，其他的可不填，这样生成的 Commit Message 内容就是“feat: add article”。</p>
+<p>这条信息说明增加了一个功能：添加了一篇文章。</p>
+<p>你也可以在全局安装依赖，这个就不用为每个项目都安装这些依赖和配置文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn global add  commitizen cz-conventional-changelog <span class="comment"># 全局安装</span></span><br></pre></td></tr></table></figure>
+
+<p>然后在用户的根目录下面，创建配置文件 <code>.czrc</code>，编写下面的代码</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123; <span class="attr">"path"</span>: <span class="string">"cz-conventional-changelog"</span> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>之后再任何一个项目文件中，你提交了文件到暂存区后，需要提交修改时，只需要在命令行中输入</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git cz</span><br></pre></td></tr></table></figure>
+
+<p>就会跳出和上面<code>yarn commit</code> 一样的提示界面，然后根据提示信息输入相关内容即可。</p>
+<p>其实如果搭配 Git Hook，效果会更好。在我们每次提交信息之前都会检测代码格式是否符合规范，只有符合规范，才能正常提交代码。</p>
+<p>首先，安装相关依赖</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn add @commitlint/cli @commitlint/config-conventional lint-staged -D</span><br></pre></td></tr></table></figure>
+
+<p>配置文件，在 <code>package.JavaScripton</code>中:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">"script": &#123;</span><br><span class="line">  "precommit": "lint-staged"</span><br><span class="line">&#125;,</span><br><span class="line"></span><br><span class="line">"lint-staged": &#123;</span><br><span class="line">  "**/*.JavaScript": [</span><br><span class="line">    "prettier --write",</span><br><span class="line">    <span class="string">"git add"</span></span><br><span class="line">  ]</span><br><span class="line">&#125;,</span><br><span class="line"></span><br><span class="line">"commitlint": &#123;</span><br><span class="line">  "extends": [</span><br><span class="line">    <span class="string">"@commitlint/config-conventional"</span></span><br><span class="line">  ]</span><br><span class="line">&#125;,</span><br></pre></td></tr></table></figure>
+
+<p>运行 <code>yarn commit</code>命令时，会先触发 precommit 的脚本，然后执行 <code>lint-staged</code> 命令，检测所有的 JavaScript 文件是否符合我们设置的规范，如果不符合规范，有先尝试使用<code>prettier --write</code> 来修复一些简单的格式问题，如果修复成功，会重新进行提交，如果修复不成功，而不会提交代码，并且提示出现问题，需要我们手动修复之后再进行提交。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>代码风格是我们在写代码的过程中慢慢形成的，好的代码风格对于我们有非常重要的影响。</p>
+<p>好的代码风格不仅增强可读性和提高代码可维护性，还能体现一个人的编程素养。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20190523-%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC%E6%B5%85%E8%B0%88/" title="代码风格浅谈">https://haledeng.com/blog/20190523-代码风格浅谈/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC/" rel="tag"># 代码风格</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20190511-JavaScript%E4%B9%8B%E6%B7%B1%E6%B5%85%E6%8B%B7%E8%B4%9D/" rel="prev" title="JavaScript之深浅拷贝">
+      <i class="fa fa-chevron-left"></i> JavaScript之深浅拷贝
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190606-JavaScript%E4%B9%8Bthis%E6%B5%85%E8%B0%88/" rel="next" title="JavaScript之This浅谈">
+      JavaScript之This浅谈 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#风格规范"><span class="nav-number">1.</span> <span class="nav-text">风格规范</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编辑器相关"><span class="nav-number">2.</span> <span class="nav-text">编辑器相关</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文件结构相关"><span class="nav-number">3.</span> <span class="nav-text">文件结构相关</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Yarn"><span class="nav-number">3.1.</span> <span class="nav-text">Yarn</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#组件化"><span class="nav-number">3.2.</span> <span class="nav-text">组件化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#前端框架"><span class="nav-number">3.3.</span> <span class="nav-text">前端框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#命名"><span class="nav-number">3.4.</span> <span class="nav-text">命名</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#文件命名"><span class="nav-number">3.4.1.</span> <span class="nav-text">文件命名</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#变量命名"><span class="nav-number">3.4.2.</span> <span class="nav-text">变量命名</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码风格相关"><span class="nav-number">4.</span> <span class="nav-text">代码风格相关</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTML"><span class="nav-number">4.1.</span> <span class="nav-text">HTML</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CSS-Stylus-Scss"><span class="nav-number">4.2.</span> <span class="nav-text">CSS &#x2F; Stylus &#x2F; Scss</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JavaScript"><span class="nav-number">4.3.</span> <span class="nav-text">JavaScript</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Vue"><span class="nav-number">4.4.</span> <span class="nav-text">Vue</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#React"><span class="nav-number">4.5.</span> <span class="nav-text">React</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Node"><span class="nav-number">4.6.</span> <span class="nav-text">Node</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关于注释"><span class="nav-number">4.7.</span> <span class="nav-text">关于注释</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Github-相关"><span class="nav-number">5.</span> <span class="nav-text">Github 相关</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

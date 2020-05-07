@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="国庆前夕，Vuejs 作者发布了关于 Vuejs3.0 开发计划的文章，文章中有提到将会使用 TypeScript 重新编写 Vuejs 的源码，使得源码结构更清晰，更易维护。因此觉得是时候学习下 TypeScript 了。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于TypeScript搭建Vue项目初试">
+<meta property="og:url" content="https://haledeng.com/blog/20181006-%E5%9F%BA%E4%BA%8Etypescript%E6%90%AD%E5%BB%BAvue%E9%A1%B9%E7%9B%AE%E5%88%9D%E8%AF%95/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="国庆前夕，Vuejs 作者发布了关于 Vuejs3.0 开发计划的文章，文章中有提到将会使用 TypeScript 重新编写 Vuejs 的源码，使得源码结构更清晰，更易维护。因此觉得是时候学习下 TypeScript 了。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-10-06T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:53:20.410Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Vue">
+<meta property="article:tag" content="TypeScript">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20181006-%E5%9F%BA%E4%BA%8Etypescript%E6%90%AD%E5%BB%BAvue%E9%A1%B9%E7%9B%AE%E5%88%9D%E8%AF%95/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>基于TypeScript搭建Vue项目初试 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20181006-%E5%9F%BA%E4%BA%8Etypescript%E6%90%AD%E5%BB%BAvue%E9%A1%B9%E7%9B%AE%E5%88%9D%E8%AF%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          基于TypeScript搭建Vue项目初试
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-10-06 20:00:00" itemprop="dateCreated datePublished" datetime="2018-10-06T20:00:00+08:00">2018-10-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/TypeScript/" itemprop="url" rel="index"><span itemprop="name">TypeScript</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>5.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>国庆前夕，Vuejs 作者发布了关于 Vuejs3.0 开发计划的文章，文章中有提到将会使用 TypeScript 重新编写 Vuejs 的源码，使得源码结构更清晰，更易维护。因此觉得是时候学习下 TypeScript 了。</p>
+<a id="more"></a>
+
+<p>对于 TypeScript 并不陌生，在前端的世界一直都有听说过这个单词，但是只知道它的一些大概的情况，比如说 TypeScript 是微软开发的语言，是 JavaScript 的超集，它包含了 JavaScript 的最新语法和采用类型检查(不然也不会叫 TypeScript)。但是，对于它的具体的语法却没什么了解，类型检查也有接触了一点，因为以前学过一点 Vuejs 的源码知识，知道 Vuejs2.0 源码引用了和 TypeScript 一样的类型检查，是 Facebook 开发的 Flow 插件。另外，还知道关于一些 Vuejs 和 TypeScript 结合的情况，网上都说 Vuejs 对于 TypeScript 的支持并不是特别的好。记得刚开始学习 Vuejs 的时候，在 Vuejs 的官方文档中就看到过，Vuejs 的兼容性是非常好的，不仅支持 ES5，ES6 还支持 TypeScript 的，甚至是 react 的 JSX 用法。不过用的最多的还是 ES5 语法。</p>
+<p>然后自然而然的去看了下 TypeScript 的文档(手册指南），还看了一些关于 TypeScript 的学习 demo，也看了一些别人写的关于 TypeScript 的博客文章，貌似 TypeScript 和 Vuejs 的结合例子或者文章确实是比较少，而使用在另外两个框架（React 和 Angular）的例子会更多一些，相关的文章也更多一点。</p>
+<p>学习了 TypeScript 之后，肯定是用动手练习一下才能巩固好知识的，以前也写过不少 Vuejs 的小 demo 和项目，是不是要找几个项目使用 TypeScript 重构一下？然后发现以前学习的高仿饿了么的项目可以派上用场，这个项目的第三方依赖主要是黄轶老师写的滚动库<code>better-scroll</code>，而现在这个库已经支持 TypeScript 了。</p>
+<h2 id="构建"><a href="#构建" class="headerlink" title="构建"></a>构建</h2><p>以前学习的高仿饿了么项目采用的 vue-cli2 脚手架构建的，现在 vue-cli3 已经出来一段时间了，cli3 脚手架已经集成了 TypeScript 和 CSS 预处理器，在创建项目时勾选上就可以了，不用自己单独去配置，非常的人性化。</p>
+<h2 id="异同点"><a href="#异同点" class="headerlink" title="异同点"></a>异同点</h2><p>项目初始架构搭建好之后，接下来就是编写组件了，因为重构的主要目的是熟悉下 TypeScript 的语法，项目的逻辑都是一样的，所以就直接拷贝了以前的代码，只改下其中的语法。除了把一些 js 的工具代码改成了 ts 的后缀之外，再增加了类型检查，主要修改还是<code>.vue</code> 文件的 <code>script</code> 部分的代码，把里面代码的 JavaScript 语法改成 TypeScript 语法。在这里主要有两种写法，一种使用的 Vue 的 extend 方法，用法和以前的输出<code>options</code>类似，还有一种就是采用类和装饰器的写法。</p>
+<p>这里采用的是类和装饰器的写法，官方推荐的也是类和装饰器的写法。主要依赖一个第三方库，叫做<code>vue-property-decorator</code>，这个库是在官方的第三方库<code>vue-class-component</code>基础上的扩展的，现在官方也推荐使用这个库。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!-- Vue.extend --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> Vue <span class="keyword">from</span> <span class="string">'vue'</span></span></span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> Vue.extend(&#123;</span></span><br><span class="line">    props：[],</span><br><span class="line">    data() &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">return</span> &#123;&#125;</span></span><br><span class="line">    &#125;,</span><br><span class="line">    computed: &#123;&#125;,</span><br><span class="line">    methods: &#123;&#125;</span><br><span class="line"><span class="actionscript">    <span class="comment">// ...</span></span></span><br><span class="line">  &#125;)</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">&lt;!-- class + decorator --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component, Prop &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"><span class="actionscript">  <span class="comment">// 注意需要使用Component装饰</span></span></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">CompoentName</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line">    @Prop() prop1!: string</span><br><span class="line"><span class="actionscript">    data1: string = <span class="string">'stringExplore'</span></span></span><br><span class="line"><span class="javascript">    <span class="keyword">get</span> computed1(): string &#123;&#125;</span></span><br><span class="line"><span class="actionscript">    method1(arg1: string): <span class="keyword">void</span> &#123;&#125;</span></span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>因为类的里面只有属性和方法，所以不会和以前一样有很多类别对象，但是在使用上也有一些语法上的差异。由于原项目比较简单，下面简单罗列下项目中重构中遇到的部分差异。</p>
+<h3 id="props"><a href="#props" class="headerlink" title="props"></a>props</h3><p>props 为子组件接受父组件传过来的属性对象，这里使用的是第三方库的<code>Prop</code>属性，默认值写在装饰器里面，使用 TypeScript 的语法。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component, Prop &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">CompoentName</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line"><span class="javascript">    @Prop(<span class="built_in">String</span>) prop1!: string</span></span><br><span class="line"><span class="actionscript">    @Prop(&#123; <span class="keyword">default</span>: <span class="number">0</span> &#125;) prop2!: number</span></span><br><span class="line">    @Prop(&#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">default</span>: <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">return</span> []</span></span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line"><span class="javascript">    ratings!: <span class="built_in">Array</span>&lt;string&gt;</span></span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="data"><a href="#data" class="headerlink" title="data"></a>data</h3><p>data 是数据或者状态，相当于类的属性，但是需要设置数据的类型。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">CompoentName</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    data1: string = <span class="string">'stringExplore'</span></span></span><br><span class="line"><span class="javascript">    data2: <span class="built_in">Array</span>&lt;string&gt; = [<span class="string">'a'</span>, <span class="string">'b'</span>, <span class="string">'c'</span>]</span></span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="computed-计算属性）"><a href="#computed-计算属性）" class="headerlink" title="computed(计算属性）"></a>computed(计算属性）</h3><p>计算属性其实也是方法，是特殊的方法，需要要方法前面增加<code>get</code>关键字，表示<code>getter</code>属性。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">CompoentName</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">get</span> computed1(): string &#123;</span></span><br><span class="line"><span class="actionscript">      <span class="keyword">return</span> <span class="string">'hello'</span></span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="methods-方法"><a href="#methods-方法" class="headerlink" title="methods(方法)"></a>methods(方法)</h3><p>原来的方法也就是类的方法，直接在类里面编写就行了。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">CompoentName</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    method1(arg1: string): <span class="keyword">void</span> &#123;</span></span><br><span class="line"><span class="actionscript">      <span class="comment">//...</span></span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="actionscript">    method2(arg1: number): <span class="keyword">void</span> &#123;</span></span><br><span class="line"><span class="actionscript">      <span class="comment">//...</span></span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="watch-监听器"><a href="#watch-监听器" class="headerlink" title="watch(监听器)"></a>watch(监听器)</h3><p>监听器使用第三方库的<code>Watch</code>装饰器。装饰器里面的是监听的对象或者是相关的参数，装饰的方法就是调用的方法。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component, Watch &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">YourComponent</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    @Watch(<span class="string">'child'</span>)</span></span><br><span class="line">    onChildChanged(val: string, oldVal: string) &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="actionscript">    @Watch(<span class="string">'person'</span>, &#123; immediate: <span class="literal">true</span>, deep: <span class="literal">true</span> &#125;)</span></span><br><span class="line">    onPersonChanged(val: Person, oldVal: Person) &#123;&#125;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="emit-事件派发"><a href="#emit-事件派发" class="headerlink" title="emit 事件派发"></a>emit 事件派发</h3><p>子组件需要给父组件传递信息时，采用事件派发，这里的事件派发使用的是第三方库的装饰器<code>Emit</code>。</p>
+<p>装饰器里面的是派发的事件(不写的话默认是修饰的方法名)，派发的参数就是装饰的方法的参数。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component, Emit &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">YourComponent</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line">    count: number = 0</span><br><span class="line"><span class="actionscript">    @Emit(<span class="string">'add'</span>)</span></span><br><span class="line">    addToCount(n: number) &#123;</span><br><span class="line"><span class="actionscript">      <span class="keyword">this</span>.count += n</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="组件注册"><a href="#组件注册" class="headerlink" title="组件注册"></a>组件注册</h3><p>组件注册需要写在装饰器<code>Component</code>里面。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> Comp1 <span class="keyword">from</span> <span class="string">'../../compoents/Comp1'</span></span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> Comp2 <span class="keyword">from</span> <span class="string">'../../compoents/Comp2'</span></span></span><br><span class="line"></span><br><span class="line">  @Component(&#123;</span><br><span class="line">    components: &#123;</span><br><span class="line">      Comp1,</span><br><span class="line">      Comp2</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">YourComponent</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="comment">//...</span></span></span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="filter-筛选"><a href="#filter-筛选" class="headerlink" title="filter(筛选)"></a>filter(筛选)</h3><p>fliter 选项也是写在<code>Component</code>装饰器里面的。其实其他的选项（比如 prop，data，methods 等）也是可以写在<code>Component</code>装饰器里面的。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component(&#123;</span><br><span class="line">    filter: &#123;</span><br><span class="line">      filter1(arg: string): string &#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">YourComponent</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="comment">//...</span></span></span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="生命周期"><a href="#生命周期" class="headerlink" title="生命周期"></a>生命周期</h3><p>vue 的生命周期函数相当于类的方法，直接编写即可。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">lang</span>=<span class="string">"ts"</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">import</span> &#123; Vue, Component &#125; <span class="keyword">from</span> <span class="string">'vue-property-decorator'</span></span></span><br><span class="line"></span><br><span class="line">  @Component</span><br><span class="line"><span class="javascript">  <span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">YourComponent</span> <span class="keyword">extends</span> <span class="title">Vue</span> </span>&#123;</span></span><br><span class="line">    created() &#123;</span><br><span class="line"><span class="actionscript">      <span class="comment">// ...</span></span></span><br><span class="line">    &#125;</span><br><span class="line">    mounted() &#123;</span><br><span class="line"><span class="actionscript">      <span class="comment">// ...</span></span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="axios"><a href="#axios" class="headerlink" title="axios"></a>axios</h3><p>原来使用 axios 时，为了在组件中方便使用，是把 axios 赋值到 Vue 的原型中去的，然后通过<code>vue.$axios</code>或者<code>this.$axios</code>在组件中调用。<del>但是使用 TypeScript 不能用这种赋值原型链的方法，可以借助了一个第三方库<a href="https://github.com/imcvampire/vue-axios" target="_blank" rel="noopener">vue-axios</a>来使用，之后再 vue 组件中就直接通过<code>vue.axios</code>或者<code>this.axios</code>来调用了。</del><br>(更正：其实也可以使用在原型链赋值的方法，只是需要添加<code>$axios</code>的类型注解。这和<code>$ref</code>是一个道理)</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// main.ts</span></span><br><span class="line"><span class="keyword">import</span> Vue <span class="keyword">from</span> <span class="string">'vue'</span></span><br><span class="line"><span class="keyword">import</span> axios <span class="keyword">from</span> <span class="string">'axios'</span></span><br><span class="line"><span class="comment">// import VueAxios from 'vue-axios'</span></span><br><span class="line"><span class="comment">// Vue.use(VueAxios, axios)</span></span><br><span class="line"></span><br><span class="line">Vue.prototype.$axios = axios</span><br><span class="line"></span><br><span class="line"><span class="comment">// Vue Component</span></span><br><span class="line"><span class="keyword">import</span> &#123; AxiosInstance &#125; <span class="keyword">from</span> <span class="string">'axios'</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="keyword">class</span> VueComponent <span class="keyword">extends</span> Vue &#123;</span><br><span class="line">  $axios!: AxiosInstance</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="better-scroll"><a href="#better-scroll" class="headerlink" title="better-scroll"></a>better-scroll</h3><p>使用 TypeScript 时需要安装一个声明类文件才可以正常在 Vuejs 组件中正常调用。DefinitelyTyped 库(即@type)已经记录了 90% 的顶级 JavaScript 库。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yarn add @types/better-scroll -D</span><br><span class="line"><span class="comment"># npm i @types/better-scroll -D</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>项目重构之后，基本的功能都能实现，vue 编译也没有错，但是 ts 的编译有一些错误，后面也逐渐修改过来了。</p>
+<p>现在对于 TypeScript 还是很粗浅的认识，特别是在类型检查上还不是很了解，不知道怎么更好的使用类型检查，一些参数还是用<code>any</code>来约束的，期待后面继续加深学习，项目也会在后面提交中修改完善类型检查。</p>
+<p>在重构中，有个意外之喜，竟然发现了一处拼写的错误，以前竟然没有发现但也没有报错，这让我看到了 TypeScript 类型检查的强大之处。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://github.com/kaorun343/vue-property-decorator" target="_blank" rel="noopener">vue-property-decorator</a></p>
+<p><a href="https://github.com/vuejs/vue-class-component" target="_blank" rel="noopener">vue-class-component</a></p>
+<p><a href="https://github.com/Microsoft/TypeScript-Vue-Starter" target="_blank" rel="noopener">TypeScript-Vue-Starter</a></p>
+<p><a href="https://www.tslang.cn/" target="_blank" rel="noopener">typescript 中文网</a></p>
+<h2 id="项目地址"><a href="#项目地址" class="headerlink" title="项目地址"></a>项目地址</h2><p>在<code>vue-elm</code>项目的<a href="https://github.com/haledc/vue-elm/tree/vue2-ts" target="_blank" rel="noopener">vue2-ts</a>分支中</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20181006-%E5%9F%BA%E4%BA%8Etypescript%E6%90%AD%E5%BB%BAvue%E9%A1%B9%E7%9B%AE%E5%88%9D%E8%AF%95/" title="基于TypeScript搭建Vue项目初试">https://haledeng.com/blog/20181006-基于typescript搭建vue项目初试/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Vue/" rel="tag"># Vue</a>
+              <a href="/tags/TypeScript/" rel="tag"># TypeScript</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20180814-%E8%AE%B0%E4%B8%80%E6%AC%A1Hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/" rel="prev" title="记一次Hexo搭建博客">
+      <i class="fa fa-chevron-left"></i> 记一次Hexo搭建博客
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20181112-Vue%E4%B9%8B%E7%BB%84%E4%BB%B6%E9%80%9A%E4%BF%A1%E6%96%B9%E6%B3%95%E5%B0%8F%E7%BB%93/" rel="next" title="Vue之组件通信方法小结">
+      Vue之组件通信方法小结 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#构建"><span class="nav-number">1.</span> <span class="nav-text">构建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#异同点"><span class="nav-number">2.</span> <span class="nav-text">异同点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#props"><span class="nav-number">2.1.</span> <span class="nav-text">props</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#data"><span class="nav-number">2.2.</span> <span class="nav-text">data</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#computed-计算属性）"><span class="nav-number">2.3.</span> <span class="nav-text">computed(计算属性）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#methods-方法"><span class="nav-number">2.4.</span> <span class="nav-text">methods(方法)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#watch-监听器"><span class="nav-number">2.5.</span> <span class="nav-text">watch(监听器)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#emit-事件派发"><span class="nav-number">2.6.</span> <span class="nav-text">emit 事件派发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#组件注册"><span class="nav-number">2.7.</span> <span class="nav-text">组件注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#filter-筛选"><span class="nav-number">2.8.</span> <span class="nav-text">filter(筛选)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生命周期"><span class="nav-number">2.9.</span> <span class="nav-text">生命周期</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#axios"><span class="nav-number">2.10.</span> <span class="nav-text">axios</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#better-scroll"><span class="nav-number">2.11.</span> <span class="nav-text">better-scroll</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#项目地址"><span class="nav-number">5.</span> <span class="nav-text">项目地址</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>

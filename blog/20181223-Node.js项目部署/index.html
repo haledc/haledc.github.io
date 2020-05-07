@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"haledeng.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"appID":"ETZWTJO7QM","apiKey":"2637d77dbb15451056cd521bebf6fb6c","indexName":"search_demo","hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前言最近写了一个 Nuxt 项目，打算部署到服务器中。 因为很久没有部署过新项目，一些部署的流程都已经忘记了，所以打算写一篇 Node.js 项目的部署文章。 写这篇文章，第一可以加深理解，第二也可以方便以后查看。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Node.js项目部署">
+<meta property="og:url" content="https://haledeng.com/blog/20181223-Node.js%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2/index.html">
+<meta property="og:site_name" content="Hale&#39;s Notes">
+<meta property="og:description" content="前言最近写了一个 Nuxt 项目，打算部署到服务器中。 因为很久没有部署过新项目，一些部署的流程都已经忘记了，所以打算写一篇 Node.js 项目的部署文章。 写这篇文章，第一可以加深理解，第二也可以方便以后查看。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-12-23T12:00:00.000Z">
+<meta property="article:modified_time" content="2020-05-07T08:53:30.800Z">
+<meta property="article:author" content="Hale">
+<meta property="article:tag" content="Node">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://haledeng.com/blog/20181223-Node.js%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Node.js项目部署 | Hale's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="Hale's Notes" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hale's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">记事本</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container"></div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="algolia-results">
+  <div id="algolia-stats"></div>
+  <div id="algolia-hits"></div>
+  <div id="algolia-pagination" class="algolia-pagination"></div>
+</div>
+
+      
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://haledeng.com/blog/20181223-Node.js%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar1.png">
+      <meta itemprop="name" content="Hale">
+      <meta itemprop="description" content="Je pense, donc je suis">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hale's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Node.js项目部署
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-12-23 20:00:00" itemprop="dateCreated datePublished" datetime="2018-12-23T20:00:00+08:00">2018-12-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Node/" itemprop="url" rel="index"><span itemprop="name">Node</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数</span>
+              <span>2.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 </span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>最近写了一个 Nuxt 项目，打算部署到服务器中。</p>
+<p>因为很久没有部署过新项目，一些部署的流程都已经忘记了，所以打算写一篇 Node.js 项目的部署文章。</p>
+<p>写这篇文章，第一可以加深理解，第二也可以方便以后查看。</p>
+<a id="more"></a>
+
+<h2 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h2><h3 id="平台"><a href="#平台" class="headerlink" title="平台"></a>平台</h3><ul>
+<li>CentOS7：阿里云服务器系统</li>
+<li>Node.js：项目运行环境</li>
+<li>Window10 本地开发系统</li>
+</ul>
+<h3 id="工具"><a href="#工具" class="headerlink" title="工具"></a>工具</h3><ul>
+<li>PM2：项目运行工具</li>
+<li>Nginx：反向代理服务器</li>
+<li>Git：项目版本控制工具</li>
+<li>XShell5：远程连接服务器工具</li>
+<li>WinSCP：远程给服务器传送文件工具</li>
+<li>Mongodb：非关系型数据库</li>
+<li>NoSQL Manager for MongoDB：MongoDB 视图化工具</li>
+</ul>
+<h2 id="连接远程服务器"><a href="#连接远程服务器" class="headerlink" title="连接远程服务器"></a>连接远程服务器</h2><p>打开浏览器，进入阿里云网站，进入“云服务 ECS”，点击实例，进入实例详情，然后点击“远程连接”，就可以连接到远程服务器。</p>
+<p>但是这个远程连接的界面实在是太难看了，而且操作也不方便，建议使用远程连接工具“XShell5”来进行远程操作服务器，简单好用。</p>
+<p>“XShell5”可以修改成自己喜欢的字体、背景和颜色，复制粘贴内容也很方便。而且家庭和学校版本是完全免费的，功能也够用了。</p>
+<h2 id="搭建环境"><a href="#搭建环境" class="headerlink" title="搭建环境"></a>搭建环境</h2><p>建议使用系统自带的 yum 来安装相应的工具，更加简单。（有的工具可能需要更新 Repo，请自行 Google 解决）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install nodejs -y</span><br><span class="line">sudo yum install nginx -y</span><br><span class="line">sudo yum install git -y</span><br><span class="line">sudo yum install mongodb-org -y</span><br><span class="line">sudo yum install yarn -y</span><br></pre></td></tr></table></figure>
+
+<p>这里也可以使用 nvm 来安装 Node.js，可以更好的管理版本。</p>
+<h2 id="下载项目"><a href="#下载项目" class="headerlink" title="下载项目"></a>下载项目</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> XXX</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖和打包项目"><a href="#安装依赖和打包项目" class="headerlink" title="安装依赖和打包项目"></a>安装依赖和打包项目</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 进入项目文件夹</span></span><br><span class="line"><span class="built_in">cd</span> &lt;folder name&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装依赖</span></span><br><span class="line">yarn</span><br><span class="line"><span class="comment"># or npm install</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 前端代码打包</span></span><br><span class="line">yarn build</span><br><span class="line"><span class="comment"># or npm run build</span></span><br></pre></td></tr></table></figure>
+
+<p>如果安装或者打包过程中，出现了问题后，导致失败，可以通过 Google 来解决。</p>
+<p>如果你的服务器配置不高的话，在服务器中编译打包可能会失败。这里建议在本地把文件打包好，然后再上传到服务器中，这里通过一个工具“WinSCP”上传文件到服务器中。</p>
+<h2 id="配置数据库数据"><a href="#配置数据库数据" class="headerlink" title="配置数据库数据"></a>配置数据库数据</h2><p>在本地开发完成项目之后，在本地的数据库中已经生成好数据了，但是服务器上的数据库上并没有数据，这时需要把本地的数据库中的数据上传到服务器数据库中去，这里我们使用了一个 MongoDB 的可视化工具“NoSQL Manager for MongoDB”来上传数据。</p>
+<p>简单说下配置步骤：</p>
+<p>首先必须要连接到服务器数据库，如果服务器数据库有设立密码（为了安全），还需要输入账号和密码才能连接，</p>
+<p>然后在服务器数据库中新建一个数据库，然后选中本地的数据库里面的集合，把它们拷贝到服务器的数据库中，</p>
+<p>最后，如果服务器数据库有密码的话，还需要在代码添加账号和密码，这样才能连接到数据库。</p>
+<h2 id="编写-Nginx-配置"><a href="#编写-Nginx-配置" class="headerlink" title="编写 Nginx 配置"></a>编写 Nginx 配置</h2><p>在 Nginx 配置目录里新建一个<code>.conf</code>文件，来定制每个项目的配置</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/nginx/conf.d/nuxt-trailer.conf</span><br></pre></td></tr></table></figure>
+
+<p><code>nuxt-trailer.conf</code>内容如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">upstream nuxt-trailer &#123;</span><br><span class="line">        server 127.0.0.1:9097;</span><br><span class="line">        keepalive 64;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">        listen 80;</span><br><span class="line">        server_name nuxt-trailer.haledeng.com;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">                proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">                proxy_set_header Host $http_host;</span><br><span class="line">                proxy_set_header X-Nginx-Proxy true;</span><br><span class="line">                proxy_set_header Connection &#39;&#39;;</span><br><span class="line">                proxy_pass http:&#x2F;&#x2F;nuxt-trailer;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>upstream</code>后面是代理项目的名称，里面的<code>server</code>是本地（服务器）运行的 ip 地址和端口，<code>server</code>监听 80 端口，<code>server_name</code>是二级域名，需要提前在阿里云服务器中配置好二级域名，<code>location</code>下面的 <code>proxy_pass</code>是代理的项目名称，按照上面的格式书写，并且需要和<code>upstream</code>后面的名字一致。</p>
+<p>编写完成后，保存，并且重启<code>nginx</code>服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
+
+<p>如果部署不止一个项目，只要再新建一个<code>.conf</code>文件，然后按照上面的配置修改一下就好了，再重启下 Nginx 服务即可。</p>
+<h2 id="阿里云配置二级域名"><a href="#阿里云配置二级域名" class="headerlink" title="阿里云配置二级域名"></a>阿里云配置二级域名</h2><p>登录阿里云网站，进入控制台，进入云解析 DNS，点击你的主域名，进入解析设置，点击添加记录，添加二级域名。</p>
+<p>在主机记录填写：nuxt-trailer，这时你的二级域名就是：<code>nuxt-trailer.xxx.xxx</code>了，</p>
+<p>在记录值填写你的服务器的外部 ip 地址，</p>
+<p>其他的默认即可，然后点击确定，10 分钟之后二级域名就会解析成功。</p>
+<h2 id="配置-PM2"><a href="#配置-PM2" class="headerlink" title="配置 PM2"></a>配置 PM2</h2><p>先安装 PM2，通过 Node.js 来安装</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yarn global add pm2</span><br><span class="line"># or npm install -g pm2</span><br></pre></td></tr></table></figure>
+
+<p>编写配置文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 创建配置文件</span><br><span class="line">touch pm2.yml</span><br><span class="line"></span><br><span class="line"># 编写配置文件</span><br><span class="line">vim pm2.yml</span><br></pre></td></tr></table></figure>
+
+<p><code>pm2.yml</code>内容如下：</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apps:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">script:</span> <span class="string">./server/index.js</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">nuxt-trailer</span></span><br><span class="line">    <span class="attr">env_production:</span></span><br><span class="line">      <span class="attr">NODE_ENV:</span> <span class="string">production</span></span><br><span class="line">      <span class="attr">HOST:</span> <span class="string">'127.0.0.1'</span></span><br><span class="line">      <span class="attr">PORT:</span> <span class="number">9097</span></span><br></pre></td></tr></table></figure>
+
+<p>其中，<code>script</code>是文件的路径，<code>name</code>是项目名称，<code>env_production</code>是环境配置。</p>
+<p>之后就是启动项目， 输入下面命令启动项目</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pm2 start pm2.yml --env production</span><br></pre></td></tr></table></figure>
+
+<p>启动成功后，输入下面命令可以查看启动的项目</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pm2 list</span><br></pre></td></tr></table></figure>
+
+<p>输入下面命令查看具体某个项目信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pm2 show &lt;id|name&gt;</span><br></pre></td></tr></table></figure>
+
+<p>一些常用的 PM2 命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 停止某个项目</span></span><br><span class="line">pm2 stop &lt;id|name&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 停止和删除某个项目</span></span><br><span class="line">pm2 delete &lt;id|name&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 重启某个项目</span></span><br><span class="line">pm2 restart &lt;id|name&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 停止所有的项目</span></span><br><span class="line">pm2 <span class="built_in">kill</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看某个项目的日志</span></span><br><span class="line">pm2 <span class="built_in">log</span> &lt;id|name&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>使用 PM2 来部署 Node.js 项目非常方便，有兴趣的同学可以学习下。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Hale
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://haledeng.com/blog/20181223-Node.js%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2/" title="Node.js项目部署">https://haledeng.com/blog/20181223-Node.js项目部署/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Node/" rel="tag"># Node</a>
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/20181112-Vue%E4%B9%8B%E7%BB%84%E4%BB%B6%E9%80%9A%E4%BF%A1%E6%96%B9%E6%B3%95%E5%B0%8F%E7%BB%93/" rel="prev" title="Vue之组件通信方法小结">
+      <i class="fa fa-chevron-left"></i> Vue之组件通信方法小结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/20190108-Git%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/" rel="next" title="Git常用命令">
+      Git常用命令 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="OTc4LzI0NzY0LzE1ODk="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#准备"><span class="nav-number">2.</span> <span class="nav-text">准备</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#平台"><span class="nav-number">2.1.</span> <span class="nav-text">平台</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#工具"><span class="nav-number">2.2.</span> <span class="nav-text">工具</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#连接远程服务器"><span class="nav-number">3.</span> <span class="nav-text">连接远程服务器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#搭建环境"><span class="nav-number">4.</span> <span class="nav-text">搭建环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#下载项目"><span class="nav-number">5.</span> <span class="nav-text">下载项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装依赖和打包项目"><span class="nav-number">6.</span> <span class="nav-text">安装依赖和打包项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置数据库数据"><span class="nav-number">7.</span> <span class="nav-text">配置数据库数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编写-Nginx-配置"><span class="nav-number">8.</span> <span class="nav-text">编写 Nginx 配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#阿里云配置二级域名"><span class="nav-number">9.</span> <span class="nav-text">阿里云配置二级域名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置-PM2"><span class="nav-number">10.</span> <span class="nav-text">配置 PM2</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">11.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Hale"
+      src="/images/avatar1.png">
+  <p class="site-author-name" itemprop="name">Hale</p>
+  <div class="site-description" itemprop="description">Je pense, donc je suis</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">73</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/haledc" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;haledc" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/haledeng" title="Zhihu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;haledeng" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>Zhihu</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+  <div class="beian"><a href="http://www.beian.miit.gov.cn/" rel="noopener" target="_blank">粤ICP备17136269号-1 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hale</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">437k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:38</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="//cdn.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script>
+<script src="/js/algolia-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+  <script type="text/javascript" src="/js/love.js"></script>
+</body>
+</html>
