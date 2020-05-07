@@ -27,7 +27,7 @@
 <meta property="og:description" content="在 Vuex 安装在 Vue 的过程中，会把用户定义的store实例赋值给 Vue 实例对象的$store中，所以我们在 Vue 组件中的任意地方使用this.$store调用store的值。但是这样使用可读性并不是很好，这样不好查找在组件的哪些地方，调用了哪些store上的属性和方法。 一般我们都会使用MapXxx语法糖来引入store的属性，这样很好的查找在哪里使用了store的哪些数据，可读">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-10-25T12:00:00.000Z">
-<meta property="article:modified_time" content="2020-05-07T08:46:15.163Z">
+<meta property="article:modified_time" content="2020-05-07T11:41:04.250Z">
 <meta property="article:author" content="Hale">
 <meta property="article:tag" content="源码学习">
 <meta property="article:tag" content="Vuex">
@@ -255,6 +255,8 @@
       
         <p>在 Vuex 安装在 Vue 的过程中，会把用户定义的<code>store</code>实例赋值给 Vue 实例对象的<code>$store</code>中，所以我们在 Vue 组件中的任意地方使用<code>this.$store</code>调用<code>store</code>的值。但是这样使用可读性并不是很好，这样不好查找在组件的哪些地方，调用了哪些<code>store</code>上的属性和方法。</p>
 <p>一般我们都会使用<code>MapXxx</code>语法糖来引入<code>store</code>的属性，这样很好的查找在哪里使用了<code>store</code>的哪些数据，可读性也会更强，也更方便管理。</p>
+<a id="more"></a>
+
 <h2 id="mapState"><a href="#mapState" class="headerlink" title="mapState"></a><code>mapState</code></h2><p>先看下<code>mapState</code>函数的代码，在<code>helpers.js</code>文件中</p>
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> mapState = normalizeNamespace(<span class="function">(<span class="params">namespace, states</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> res = &#123;&#125;</span><br><span class="line">  normalizeMap(states).forEach(<span class="function">(<span class="params">&#123; key, val &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> res</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
 

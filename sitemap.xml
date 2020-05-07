@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://haledeng.com/blog/20191025-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84Map%E8%AF%AD%E6%B3%95%E7%B3%96/</loc>
+    
+    <lastmod>2020-05-07T11:41:04.250Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://haledeng.com/blog/20180313-%E5%A6%82%E4%BD%95%E5%9C%A8github%E4%B8%8A%E5%B1%95%E7%A4%BAvue%E9%A1%B9%E7%9B%AE/</loc>
     
     <lastmod>2020-05-07T08:59:03.316Z</lastmod>
@@ -432,13 +439,6 @@
     <loc>https://haledeng.com/blog/20191018-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/</loc>
     
     <lastmod>2020-05-07T08:46:22.672Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://haledeng.com/blog/20191025-Vuex3%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B9%8BVuex%E7%9A%84Map%E8%AF%AD%E6%B3%95%E7%B3%96/</loc>
-    
-    <lastmod>2020-05-07T08:46:15.163Z</lastmod>
     
   </url>
   
