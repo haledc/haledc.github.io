@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://haledeng.com/blog/20190523-%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC%E6%B5%85%E8%B0%88/</loc>
+    
+    <lastmod>2020-05-27T09:26:29.882Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://haledeng.com/about/index.html</loc>
     
     <lastmod>2020-05-07T12:56:43.849Z</lastmod>
@@ -250,13 +257,6 @@
     <loc>https://haledeng.com/blog/20190606-JavaScript%E4%B9%8Bthis%E6%B5%85%E8%B0%88/</loc>
     
     <lastmod>2020-05-07T08:54:36.368Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://haledeng.com/blog/20190523-%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC%E6%B5%85%E8%B0%88/</loc>
-    
-    <lastmod>2020-05-07T08:54:31.103Z</lastmod>
     
   </url>
   
